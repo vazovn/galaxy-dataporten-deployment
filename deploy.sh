@@ -21,6 +21,7 @@ if [ "$1" == "-y" ]; then
 else
     read -p "Install mod_auth_openidc?" installmod
     read -p "Update httpd.conf" updatehttpdconf
+    read -p "Update ssl.conf" updatesslconf
 fi
 
 read -p "Dataporten Client ID" dpclientid
@@ -34,32 +35,25 @@ esac
 
 case ${updatehttpdconf} in
     [Yy]* ) 
-    gawk -i inplace -v INPLACE_SUFFIX=.original \
-        '/Supplemental configuration/ {print "
-        <Location \"/\">
-        RequestHeader set X-URL-SCHEME https
-        </Location>
-    
-        <VirtualHost _default_:80>
-          RewriteEngine on
-            ReWriteCond %{SERVER_PORT} !^443$
-          RewriteRule ^/(.*) https://%{HTTP_HOST}/$1 [NC,R,L]
-      </VirtualHost>
-      "}1;
-      { print }
-      ' /etc/httpd/conf/httpd.conf
-
-#    gawk -i inplace -v INPLACE_SUFFIX=.original \
-#        '/## SSL Virtual Host Context/ { print "
-#    OIDCResponseType \"code\"
-#    OIDCProviderMetadataURL https://auth.dataporten.no/.well-known/openid-configuration
-#    OIDCClientID " dpclientid "
-#    OIDCClientSecret " dpclientsecret "
-#    OIDCCryptoPassphrase openstack
-#    OIDCRedirectURI https://geoaccessno-u01.hpc.uio.no/callback
-#    #OIDCRemoteUserClaim email
-#    OIDCScope \"openid email profile\"
-#"}1
-#    ' /etc/httpd/conf.d/ssl.conf
+        sed -i.orig-$(date "+%y-%m-%d") -E '/Supplemental configuration/r 01.httpd.conf' /etc/httpd/conf/httpd.conf
     ;;
 esac
+
+case ${updatesslconf} in
+    [Yy]* )
+        echo "Adds DP info from 01.ssl.conf"
+        sed "s/DPCLIENTID/${dpclientid}/" 01.ssl.conf > tmp.01.ssl.conf
+        sed -i "s/DPCLIENTSECRET/${dpclientsecret}/" tmp.01.ssl.conf
+        sed -i "s/HOSTNAME/${HOSTNAME}/" tmp.01.ssl.conf
+        sudo sed -i.orig-$(date "+%y-%m-%d") -E '1 r tmp.01.ssl.conf' /etc/httpd/conf.d/ssl.conf
+        rm tmp.01.ssl.conf
+
+        echo "Adds galaxy proxy info"
+        sudo sed -i -E '/VirtualHost _default_:443/r tmp.01.ssl.conf' /etc/httpd/conf.d/ssl.conf
+
+        echo "copies users-script to /usr/local/galaxyemailusers.py"
+        sudo cp users.py /usr/local/galaxyemailusers.py
+        ;;
+esac
+
+
