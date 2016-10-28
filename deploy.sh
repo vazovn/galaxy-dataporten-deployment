@@ -52,7 +52,7 @@ case ${updatesslconf} in
         sudo sed -i -E '/VirtualHost _default_:443/r 02.ssl.conf' /etc/httpd/conf.d/ssl.conf
 
         echo "copies users-script to /usr/local/galaxyemailusers.py"
-        sudo cp users.py /usr/local/galaxyemailusers.py
+        sudo cp users.py /usr/local/bin/galaxyemailusers.py
         ;;
 esac
 
