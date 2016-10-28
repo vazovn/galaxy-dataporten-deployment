@@ -8,7 +8,8 @@ function install_mod_auth_openidc {
     wget https://github.com/pingidentity/mod_auth_openidc/releases/download/${VER}/${MOD_AUTH_OPENIDC}
     wget https://github.com/pingidentity/mod_auth_openidc/releases/download/${VER}/${CJOSE}
     sudo yum localinstall ${MOD_AUTH_OPENIDC}
-    sudo yum localinstall ${CJOSE}
+    sudo yum install mod_ssl
+    # sudo yum localinstall ${CJOSE}
     rm ${MOD_AUTH_OPENIDC}
     rm ${CJOSE}
 
@@ -18,11 +19,14 @@ if [ "$1" == "-y" ]; then
     install=Y
     updatehttpdconf=Y
 else
-    read -p "Install mod_auth_openidc?" install
-    read -p "Update /etc/httpd/conf/httpd.conf" updatehttpdconf
+    read -p "Install mod_auth_openidc?" installmod
+    read -p "Update httpd.conf" updatehttpdconf
 fi
 
-case ${install} in
+read -p "Dataporten Client ID" dpclientid
+read -p "Dataporten Client Secret" dpclientsecret
+
+case ${installmod} in
     [Yy]* ) 
         install_mod_auth_openidc
     ;;
@@ -30,8 +34,9 @@ esac
 
 case ${updatehttpdconf} in
     [Yy]* ) 
-    awk '/Supplemental configuration/ {
-        <Location "/">
+    gawk -i inplace -v INPLACE_SUFFIX=.original \
+        '/Supplemental configuration/ {print "
+        <Location \"/\">
         RequestHeader set X-URL-SCHEME https
         </Location>
     
@@ -40,8 +45,21 @@ case ${updatehttpdconf} in
             ReWriteCond %{SERVER_PORT} !^443$
           RewriteRule ^/(.*) https://%{HTTP_HOST}/$1 [NC,R,L]
       </VirtualHost>
-      }
+      "}1;
       { print }
       ' /etc/httpd/conf/httpd.conf
+
+#    gawk -i inplace -v INPLACE_SUFFIX=.original \
+#        '/## SSL Virtual Host Context/ { print "
+#    OIDCResponseType \"code\"
+#    OIDCProviderMetadataURL https://auth.dataporten.no/.well-known/openid-configuration
+#    OIDCClientID " dpclientid "
+#    OIDCClientSecret " dpclientsecret "
+#    OIDCCryptoPassphrase openstack
+#    OIDCRedirectURI https://geoaccessno-u01.hpc.uio.no/callback
+#    #OIDCRemoteUserClaim email
+#    OIDCScope \"openid email profile\"
+#"}1
+#    ' /etc/httpd/conf.d/ssl.conf
     ;;
 esac
