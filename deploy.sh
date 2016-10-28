@@ -35,7 +35,7 @@ esac
 
 case ${updatehttpdconf} in
     [Yy]* ) 
-        sed -i.orig-$(date "+%y-%m-%d") -E '/Supplemental configuration/r 01.httpd.conf' /etc/httpd/conf/httpd.conf
+        sudo sed -i.orig-$(date "+%y-%m-%d") -E '/Supplemental configuration/r 01.httpd.conf' /etc/httpd/conf/httpd.conf
     ;;
 esac
 
