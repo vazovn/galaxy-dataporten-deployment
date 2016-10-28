@@ -19,13 +19,13 @@ if [ "$1" == "-y" ]; then
     install=Y
     updatehttpdconf=Y
 else
-    read -p "Install mod_auth_openidc?" installmod
-    read -p "Update httpd.conf" updatehttpdconf
-    read -p "Update ssl.conf" updatesslconf
+    read -p "Install mod_auth_openidc? " installmod
+    read -p "Update httpd.conf " updatehttpdconf
+    read -p "Update ssl.conf " updatesslconf
 fi
 
-read -p "Dataporten Client ID" dpclientid
-read -p "Dataporten Client Secret" dpclientsecret
+read -p "Dataporten Client ID: " dpclientid
+read -p "Dataporten Client Secret: " dpclientsecret
 
 case ${installmod} in
     [Yy]* ) 
