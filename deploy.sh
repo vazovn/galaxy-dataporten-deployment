@@ -54,7 +54,7 @@ case ${updatesslconf} in
         rm tmp.01.ssl.conf
 
         echo "Adds galaxy proxy info"
-        if grep --quiet 'VirtualHost _default_:443' /etc/httpd/conf/httpd.conf; then
+        if grep --quiet 'VirtualHost _default_:443' /etc/httpd/conf.d/ssl.conf; then
             sudo sed -i -E '/VirtualHost _default_:443/r 02.ssl.conf' /etc/httpd/conf.d/ssl.conf
         else
             echo "Line matching /VirtualHost _default_:443/ not found in ssl.conf."
