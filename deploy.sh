@@ -40,6 +40,7 @@ case ${updatehttpdconf} in
         else
             echo "Line matching /Supplemental configuration/ not found in httpd.conf"
             exit 1
+        fi
     ;;
 esac
 
@@ -58,7 +59,7 @@ case ${updatesslconf} in
         else
             echo "Line matching /VirtualHost _default_:443/ not found in ssl.conf."
             exit 1
-
+        fi
         echo "copies users-script to /usr/local/galaxyemailusers.py"
         sudo cp users.py /usr/local/bin/galaxyemailusers.py
         ;;
