@@ -5,11 +5,11 @@ MOD_AUTH_OPENIDC=mod_auth_openidc-2.0.0-1.el7.centos.x86_64.rpm
 CJOSE=cjose-0.4.1-1.el7.centos.x86_64.rpm
 
 function install_mod_auth_openidc {
-    wget https://github.com/pingidentity/mod_auth_openidc/releases/download/${VER}/${MOD_AUTH_OPENIDC}
     wget https://github.com/pingidentity/mod_auth_openidc/releases/download/${VER}/${CJOSE}
+    wget https://github.com/pingidentity/mod_auth_openidc/releases/download/${VER}/${MOD_AUTH_OPENIDC}
+    sudo yum localinstall ${CJOSE}
     sudo yum localinstall ${MOD_AUTH_OPENIDC}
     sudo yum install mod_ssl
-    # sudo yum localinstall ${CJOSE}
     rm ${MOD_AUTH_OPENIDC}
     rm ${CJOSE}
 
@@ -35,7 +35,11 @@ esac
 
 case ${updatehttpdconf} in
     [Yy]* ) 
-        sudo sed -i.orig-$(date "+%y-%m-%d") -E '/Supplemental configuration/r 01.httpd.conf' /etc/httpd/conf/httpd.conf
+        if grep --quiet 'Supplemental configuration' /etc/httpd/conf/httpd.conf; then
+            sudo sed -i.orig-$(date "+%y-%m-%d") -E '/Supplemental configuration/r 01.httpd.conf' /etc/httpd/conf/httpd.conf
+        else
+            echo "Line matching /Supplemental configuration/ not found in httpd.conf"
+            exit 1
     ;;
 esac
 
@@ -49,7 +53,11 @@ case ${updatesslconf} in
         rm tmp.01.ssl.conf
 
         echo "Adds galaxy proxy info"
-        sudo sed -i -E '/VirtualHost _default_:443/r 02.ssl.conf' /etc/httpd/conf.d/ssl.conf
+        if grep --quiet 'VirtualHost _default_:443' /etc/httpd/conf/httpd.conf; then
+            sudo sed -i -E '/VirtualHost _default_:443/r 02.ssl.conf' /etc/httpd/conf.d/ssl.conf
+        else
+            echo "Line matching /VirtualHost _default_:443/ not found in ssl.conf."
+            exit 1
 
         echo "copies users-script to /usr/local/galaxyemailusers.py"
         sudo cp users.py /usr/local/bin/galaxyemailusers.py
