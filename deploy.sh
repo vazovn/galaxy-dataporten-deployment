@@ -62,6 +62,8 @@ case ${updatesslconf} in
         fi
         echo "copies users-script to /usr/local/galaxyemailusers.py"
         sudo cp users.py /usr/local/bin/galaxyemailusers.py
+        echo "copies gold-script to /usr/local/adduser_to_gold.py"
+        sudo cp adduser_to_gold.py /usr/local/bin/
         ;;
 esac
 
