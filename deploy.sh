@@ -18,10 +18,12 @@ function install_mod_auth_openidc {
 if [ "$1" == "-y" ]; then
     install=Y
     updatehttpdconf=Y
+    fixfirewallandselinux=Y
 else
     read -p "Install mod_auth_openidc? " installmod
     read -p "Update httpd.conf " updatehttpdconf
     read -p "Update ssl.conf " updatesslconf
+    read -p "Open ports and fix selinux issues? " fixfirewallandselinux
 fi
 
 read -p "Dataporten Client ID: " dpclientid
@@ -65,4 +67,20 @@ case ${updatesslconf} in
         ;;
 esac
 
+case ${fixfirewallandselinux} in
+    [Yy]* ) 
+        echo "Open port 80 and 443"
+        sudo firewall-cmd --permanent --add-port=443/tcp
+        sudo firewall-cmd --permanent --add-port=80/tcp
+        sudo firewall-cmd --reload
+        echo "Fix selinux issues"
+        sudo setsebool -P httpd_can_network_connect 1
+        sudo setsebool -P httpd_can_network_relay 1
+        sudo setsebool -P httpd_enable_homedirs 1
+        sudo chcon -R -t httpd_sys_content_t /home/galaxy/galaxy/static/
+        sudo restorecon -Rv /home/galaxy/galaxy/static/
+        sudo setsebool -P httpd_read_user_content 1
+        sudo apachectl restart 
+    ;;
+esac
 
