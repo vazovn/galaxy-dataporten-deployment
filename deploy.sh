@@ -4,6 +4,12 @@ VER=v2.0.0
 MOD_AUTH_OPENIDC=mod_auth_openidc-2.0.0-1.el7.centos.x86_64.rpm
 CJOSE=cjose-0.4.1-1.el7.centos.x86_64.rpm
 
+# Check rhel major release
+if [ $(lsb_release -rs | cut -f1 -d.) != "7" ]; then
+    echo This script requires rhel7
+    exit 1
+fi
+
 function install_mod_auth_openidc {
     wget https://github.com/pingidentity/mod_auth_openidc/releases/download/${VER}/${CJOSE}
     wget https://github.com/pingidentity/mod_auth_openidc/releases/download/${VER}/${MOD_AUTH_OPENIDC}
