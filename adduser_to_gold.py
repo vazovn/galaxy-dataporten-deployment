@@ -90,7 +90,7 @@ def add_remote_user_to_GOLD( email, feide_username, idp ) :
             account_id = account_info[0]
 
             ## Credit the account (in hours)
-            credit_account_command = "sudo /opt/gold/bin/gdeposit -h -a %s -z 10000" % account_id
+            credit_account_command = "sudo /opt/gold/bin/gdeposit -h -a %s -z 200" % account_id
             p = subprocess.Popen(credit_account_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             p.wait()
 
@@ -105,9 +105,18 @@ def add_remote_user_to_GOLD( email, feide_username, idp ) :
     else :
         print "Failed to create a user in GOLD"
 
+def check_if_gold_exist():
+    # TODO
+    pass
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", dest='email')
     args = parser.parse_args()
-    add_remote_user_to_GOLD(args.email, None, None)
+    if check_if_gold_exist():
+        add_remote_user_to_GOLD(args.email, None, None)
+    else:
+        # log this
+        pass
+
 
