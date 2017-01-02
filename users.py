@@ -2,7 +2,6 @@
 
 import ConfigParser
 import os.path
-
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer, String, Boolean
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
