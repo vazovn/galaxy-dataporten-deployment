@@ -2,9 +2,9 @@
 
 import ConfigParser
 import os.path
-
-from sqlalchemy import create_engine, Table, MetaData
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, Table, MetaData, Column, Integer, String, Boolean
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 import subprocess
 import sys
 
@@ -23,22 +23,37 @@ else:
                + '@' + db_host
                + '/' + db_name)
     config.add_section('log')
-    config.set('file', '')
+    config.set('log', 'file', '')
     with open(sys.path[0] + '/config.cfg', 'wb') as configfile:
         config.write(configfile)
 
-db = create_engine(config.get('db', 'uri'))
-metadata = MetaData(db)
-users = Table('usersnew', metadata, autoload=True)
-Session = sessionmaker(bind=db)
+engine = create_engine(config.get('db', 'uri'))
+db_session = scoped_session(sessionmaker(
+    bind=engine))
+# metadata = MetaData(db)
+# users = Table('usersnew', metadata, autoload=True)
+# Session = sessionmaker(bind=db)
+# session = Session()
+Base = declarative_base()
+Base.query = db_session.query_property()
+
+class User(Base):
+    __tablename__ = 'usersnew'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(200))
+    email = Column(String(200))
+    email_confirmed = Column(Boolean)
+    conf_token = Column(String(200))
+    # salt = Column(String(200))
+    openid = Column(String(200), index=True, unique=True)
 
 def find_user(dpid):
-    user = Session.query.filter_by(openid=dpid).first()
+    user = db_session.query(User).filter_by(openid=dpid).first()
     return user
 
 def run_adduser_to_gold(email):
-    if email:
-        subprocess.call(["python", "adduser_to_gold.py", "-e", email])
+    if os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
+        subprocess.call(["python", sys.path[0] + "/adduser_to_gold.py", "-e", email])
 
 def returnemail(request):
     # Apache sends this in format:
@@ -54,6 +69,9 @@ def returnemail(request):
             run_adduser_to_gold(user.email)
             return user.email + '\n'
     return "none\n"
+
+if len(sys.argv) > 1:
+    exit(0)
 
 while True:
     request = sys.stdin.readline()
