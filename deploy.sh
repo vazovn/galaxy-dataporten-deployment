@@ -18,11 +18,14 @@ function install_mod_auth_openidc {
 if [ "$1" == "-y" ]; then
     install=Y
     updatehttpdconf=Y
+    updatesslconf=Y
+    installuserspy=Y
     fixfirewallandselinux=Y
 else
     read -p "Install mod_auth_openidc? " installmod
     read -p "Update httpd.conf " updatehttpdconf
     read -p "Update ssl.conf " updatesslconf
+    read -p "Install users.py" installuserspy
     read -p "Open ports and fix selinux issues? " fixfirewallandselinux
 fi
 
@@ -32,6 +35,20 @@ read -p "Dataporten Client Secret: " dpclientsecret
 case ${installmod} in
     [Yy]* ) 
         install_mod_auth_openidc
+    ;;
+esac
+
+case ${installuserspy} in
+    [Yy]* )
+        sudo yum install postgresql-devel
+        sudo virtualenv /usr/local/.venv-galaxyemailusers
+        sudo /usr/local/.venv-galaxyemailusers/bin/pip install sqlalchemy
+        sudo /usr/local/.venv-galaxyemailusers/bin/pip install psycopg2
+        echo "copies users-script to /usr/local/galaxyemailusers.py"
+        sudo cp users.py /usr/local/bin/galaxyemailusers.py
+        echo "copies gold-script to /usr/local/adduser_to_gold.py"
+        sudo cp adduser_to_gold.py /usr/local/bin/
+        sudo /usr/local/.venv-galaxyemailusers/bin/python /usr/local/bin/galaxyemailusers.py --first
     ;;
 esac
 
@@ -62,8 +79,12 @@ case ${updatesslconf} in
             echo "Line matching /VirtualHost _default_:443/ not found in ssl.conf."
             exit 1
         fi
-        echo "copies users-script to /usr/local/galaxyemailusers.py"
-        sudo cp users.py /usr/local/bin/galaxyemailusers.py
+        ;;
+esac
+
+case ${updatesslconf} in
+    [Yy]* )
+        echo ""
         ;;
 esac
 
