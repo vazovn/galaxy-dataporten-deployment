@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/local/.venv-galaxyemailusers/bin/python
+## # /usr/bin/env python
 
 import ConfigParser
 import os.path
