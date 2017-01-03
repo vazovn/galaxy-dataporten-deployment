@@ -10,7 +10,7 @@ Usage:
 
 ### Dataporten application
 
-You need to have the dataporten openid information ready. On [https://dashboard.dataporten.no/](https://dashboard.dataporten.no/), you will need to register an application. 
+You need to have the dataporten openid information ready. For development, you can do this yourself. On [https://dashboard.dataporten.no/](https://dashboard.dataporten.no/), you will need to register an application. 
 After registering, you will find the Client ID and Secret ID under OAuth credentials.
 
 The important fields are:
@@ -41,7 +41,6 @@ Should be set to:
 #### Administrators
 
 For portals maintained by FT, FT should be added as an administrator.
-
 
 ## What it does
 
