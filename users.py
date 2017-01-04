@@ -107,7 +107,7 @@ def return_email(request):
         return requestsplit[0] + '\n'
     if len(requestsplit) > 1:
         user = find_user(requestsplit[1])
-        if user and user.email:
+        if user and user.email and user.email_confirmed:
             run_adduser_to_gold(user.email)
             return user.email + '\n'
     return "none\n"
