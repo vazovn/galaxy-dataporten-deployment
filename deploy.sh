@@ -74,6 +74,9 @@ case ${updatesslconf} in
         echo "Adds DP info from 01.ssl.conf"
         sed "s/DPCLIENTID/${dpclientid}/" 01.ssl.conf > tmp.01.ssl.conf
         sed -i "s/DPCLIENTSECRET/${dpclientsecret}/" tmp.01.ssl.conf
+        randomstringlen=$(( ( RANDOM % 30 ) + 30 ))
+        randomstring=$(head /dev/urandom | uuencode -m - | sed -n 2p | cut -c-${randomstringlen})
+        sed -i "s/CRYPTOPASSPHRASE/${randomstring}/" tmp.01.ssl.conf
         sed -i "s/HOSTNAME/${HOSTNAME}/" tmp.01.ssl.conf
         sudo sed -i.orig-$(date "+%y-%m-%d") -E '1 r tmp.01.ssl.conf' /etc/httpd/conf.d/ssl.conf
         rm tmp.01.ssl.conf
