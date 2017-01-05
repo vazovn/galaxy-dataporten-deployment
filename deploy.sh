@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VER=v2.0.0
+VER=v2.1.3
 MOD_AUTH_OPENIDC=mod_auth_openidc-2.1.3-1.el7.centos.x86_64.rpm
 CJOSE=cjose-0.4.1-1.el7.centos.x86_64.rpm
 
