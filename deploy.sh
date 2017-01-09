@@ -46,7 +46,7 @@ esac
 
 case ${installuserspy} in
     [Yy]* )
-        sudo yum install postgresql-devel
+        sudo yum install postgresql-devel python-virtualenv
         sudo virtualenv /usr/local/.venv-galaxyemailusers
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install sqlalchemy
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install psycopg2
@@ -74,7 +74,7 @@ case ${updatesslconf} in
         echo "Adds DP info from 01.ssl.conf"
         sed "s/DPCLIENTID/${dpclientid}/" 01.ssl.conf > tmp.01.ssl.conf
         sed -i "s/DPCLIENTSECRET/${dpclientsecret}/" tmp.01.ssl.conf
-        randomstring=$(python -c 'import random, string; print "".join(random.choice(string.ascii_uppercase + string.digits) for n in range(random.randint(30,50))')
+        randomstring=$(python -c 'import random, string; print "".join(random.choice(string.ascii_uppercase + string.digits) for n in range(random.randint(30,50)))')
         sed -i "s/CRYPTOPASSPHRASE/${randomstring}/" tmp.01.ssl.conf
         sed -i "s/HOSTNAME/${HOSTNAME}/" tmp.01.ssl.conf
         sudo sed -i.orig-$(date "+%y-%m-%d") -E '1 r tmp.01.ssl.conf' /etc/httpd/conf.d/ssl.conf
