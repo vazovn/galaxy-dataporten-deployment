@@ -3,8 +3,9 @@
 import argparse
 import subprocess
 import re
+import psutil
 
-def add_remote_user_to_GOLD( email, feide_username, idp ) :
+def add_remote_user_to_GOLD( email ) :
     """
     At registration all users are added to GOLD: User is inserted to
     GOLD user DB and to gx_default (Galaxy default) project in GOLD.
@@ -14,16 +15,8 @@ def add_remote_user_to_GOLD( email, feide_username, idp ) :
     message = ""
     username = email
     user_info = []
-    description = 'Unspecified IdP'
-    print "==========  Accounting.py  IDP =========", idp
 
-    ## Add the user to GOLD DB
-    if re.search("test-fe.cbu.uib.no", idp ):
-        description = 'NELS IdP user'
-    elif  re.search("feide.no", idp ):
-        description = 'FEIDE IdP user'
-
-    useradd_command = "sudo /opt/gold/bin/gmkuser %s -d \"%s\"" % (username,description)
+    useradd_command = "sudo /opt/gold/bin/gmkuser %s " % (username)
     p = subprocess.Popen(useradd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     p.wait()
 
@@ -42,22 +35,9 @@ def add_remote_user_to_GOLD( email, feide_username, idp ) :
         if re.search(username,line) :
             user_info = line.split()
 
-    ## Nikolay USIT - LAP customization
-    ## Check if the user is associated with a MAS project
-    ## projects = _get_MAS_projects( feide_username)
-    projects = []
-
     ## If the user is sucessfully created
     if user_info[0] == username and user_info[1] == 'True' :
 
-        ## If the user is member of MAS projects and no 200 CPU hrs quota is allowed
-        if len(projects) > 0 :
-            proj_names = " ".join(projects)
-            message = "A remote user %s has been added to the portal.</br>The user is a member of the project(s) %s and can only run jobs in these projects.\n" % (username,proj_names)
-            #print "Feide user %s added successfully! User associated to Notur projects." % username
-            return message
-
-        else :
             ## Add user to default galaxy project gx_default, create account and credit the account with default CPU hours
             add_to_gx_default_command = "sudo /opt/gold/bin/gchproject --addUsers %s gx_default " % username
             p = subprocess.Popen(add_to_gx_default_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -106,17 +86,21 @@ def add_remote_user_to_GOLD( email, feide_username, idp ) :
         print "Failed to create a user in GOLD"
 
 def check_if_gold_exist():
-    # TODO
-    pass
+    for pid in psutil.pids():
+        p = psutil.Process(pid)
+        if p.name() == "goldd":
+            return True
+            
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", dest='email')
     args = parser.parse_args()
     if check_if_gold_exist():
-        add_remote_user_to_GOLD(args.email, None, None)
+        message = add_remote_user_to_GOLD(args.email)
+        print message
     else:
-        # log this
+        print "User %s has not been added to GOLD! Add user manually. " % args.email
         pass
 
 

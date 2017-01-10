@@ -50,6 +50,7 @@ case ${installuserspy} in
         sudo virtualenv /usr/local/.venv-galaxyemailusers
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install sqlalchemy
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install psycopg2
+        sudo /usr/local/.venv-galaxyemailusers/bin/pip install psutil
         echo "copies users-script to /usr/local/galaxyemailusers.py"
         sudo cp users.py /usr/local/bin/galaxyemailusers.py
         echo "copies gold-script to /usr/local/adduser_to_gold.py"
