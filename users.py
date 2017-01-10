@@ -44,7 +44,7 @@ else:
                + ':' + db_pass
                + '@' + db_host
                + '/' + db_name)
-    config.set('db', 'table_name', 'users')
+    config.set('db', 'table_name', 'usersprod')
     config.add_section('log')
     config.set('log', 'file', '')
     with open(sys.path[0] + '/config.cfg', 'wb') as configfile:
