@@ -35,6 +35,7 @@ else
     read -p "Open ports and fix selinux issues? " fixfirewallandselinux
 fi
 
+echo "Before continuing, please read the information in README.md"
 read -p "Dataporten Client ID: " dpclientid
 read -p "Dataporten Client Secret: " dpclientsecret
 

@@ -38,6 +38,8 @@ Should be set to:
 - Profilinfo
 - Bruker-ID
 
+### Galaxy-register 
+
 #### Administrators
 
 For portals maintained by FT, FT should be added as an administrator.
@@ -46,7 +48,7 @@ For portals maintained by FT, FT should be added as an administrator.
 
 ### Installs mod_auth_openidc
 
-The script downloads and installs the rpm packages for mod_auth_openidc
+The script downloads and installs the rpm packages for mod_auth_openidc.
 
 ### Updates httpd.conf and ssl.conf
 
