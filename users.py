@@ -90,7 +90,7 @@ def run_adduser_to_gold(email):
     :param email: Email address
     """
     if os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
-        subprocess.call(["python", sys.path[0] + "/adduser_to_gold.py", "-e", email])
+        subprocess.call(["python", sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
 
 
 def return_email(request):
@@ -103,12 +103,12 @@ def return_email(request):
     requestsplit = request.strip().split(';')
     if requestsplit[0]:
         # if we get email from idp
-        run_adduser_to_gold(requestsplit[0])
+        run_adduser_to_gold(requestsplit[0], request)
         return requestsplit[0] + '\n'
     if len(requestsplit) > 1:
         user = find_user(requestsplit[1])
         if user and user.email and user.email_confirmed:
-            run_adduser_to_gold(user.email)
+            run_adduser_to_gold(user.email, request)
             return user.email + '\n'
     return "none\n"
 

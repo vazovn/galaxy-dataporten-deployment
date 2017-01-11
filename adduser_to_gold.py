@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import subprocess
 import re
 import psutil
+import urlparse
 
-def add_remote_user_to_GOLD( email ) :
+def add_remote_user_to_GOLD( email, provider=None ) :
     """
     At registration all users are added to GOLD: User is inserted to
     GOLD user DB and to gx_default (Galaxy default) project in GOLD.
     This is a new function for the common code only!!
+
+    @:param email email address
+    @:param provider idp provider type (feide, social) retrieved from dataporten
     """
 
     message = ""
@@ -90,16 +95,33 @@ def check_if_gold_exist():
         p = psutil.Process(pid)
         if p.name() == "goldd":
             return True
-            
+
+def idp_provider_type_from_request(request):
+    """
+    :param request: String on the form email;dpid;http-request
+    :return: idp provider type (for example feide)
+    """
+    requestsplit = request.split(';', 2)
+    if len(requestsplit) != 3:
+        return "none"
+    else:
+        try:
+            idp_provider_type = json.loads(urlparse.parse_qs(requestsplit[2])['acresponse'][0])['def'][0][0]
+        except:
+            idp_provider_type = "unknown"
+        return idp_provider_type
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", dest='email')
+    parser.add_argument("-r", dest='request')
     args = parser.parse_args()
     if check_if_gold_exist():
-        message = add_remote_user_to_GOLD(args.email)
+        message = add_remote_user_to_GOLD(args.email, idp_provider_type_from_request(args.request))
         print message
     else:
+        print idp_provider_type_from_request(args.request)
         print "User %s has not been added to GOLD! Add user manually. " % args.email
         pass
 
