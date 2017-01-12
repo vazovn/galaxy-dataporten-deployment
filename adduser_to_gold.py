@@ -21,7 +21,12 @@ def add_remote_user_to_GOLD( email, provider=None ) :
     username = email
     user_info = []
 
-    useradd_command = "sudo /opt/gold/bin/gmkuser %s " % (username)
+    if provider[0] == "feide":
+        description = 'Default FEIDE-Galaxy user'
+    else:
+        description = ":".join(provider)
+
+    useradd_command = "sudo /opt/gold/bin/gmkuser %s -d \"%s\" " % (username, description)
     p = subprocess.Popen(useradd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     p.wait()
 
@@ -99,16 +104,16 @@ def check_if_gold_exist():
 def idp_provider_type_from_request(request):
     """
     :param request: String on the form email;dpid;http-request
-    :return: idp provider type (for example feide)
+    :return: tuple with idp provider type (first element: string with feide or social)
     """
     requestsplit = request.split(';', 2)
     if len(requestsplit) != 3:
         return "none"
     else:
         try:
-            idp_provider_type = json.loads(urlparse.parse_qs(requestsplit[2])['acresponse'][0])['def'][0][0]
+            idp_provider_type = json.loads(urlparse.parse_qs(requestsplit[2])['acresponse'][0])['def'][0]
         except:
-            idp_provider_type = "unknown"
+            idp_provider_type = ("unknown",)
         return idp_provider_type
 
 
