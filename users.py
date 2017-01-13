@@ -83,14 +83,14 @@ def find_user(dpid):
     return user
 
 
-def run_adduser_to_gold(email):
+def run_adduser_to_gold(email, request):
     """
     Calls the script adduser_to_gold.py as a subprocess, if this file exist, and the email field is not empty.
 
     :param email: Email address
     """
     if os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
-        subprocess.call(["python", sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
+        subprocess.call([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
 
 
 def return_email(request):
