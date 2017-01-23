@@ -44,7 +44,7 @@ def add_remote_user_to_GOLD( email, provider=None ) :
     else:
         description = ":".join(provider)
 
-    useradd_command = ['/opt/gold/bin/gmkuser', username, '-d' description]
+    useradd_command = ['/opt/gold/bin/gmkuser', username, '-d', description]
     useradd = popen_communicate(useradd_command)
 
     ## If the user is sucessfully created
