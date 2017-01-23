@@ -3,9 +3,28 @@
 import argparse
 import json
 import subprocess
+
+import datetime
 import re
 import psutil
 import urlparse
+import os
+import io
+
+def popen_communicate(command):
+    """
+
+    :param command: gold command
+    :type command: list
+    :return: dictionary: {stdout, stderr, rc} (returncode)
+    """
+    with open(os.devnull, 'w') as devnull:
+        p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sdata = p.communicate()
+    return {'stdout': sdata[0],
+            'stderr': sdata[1],
+            'rc': p.returncode}
+
 
 def add_remote_user_to_GOLD( email, provider=None ) :
     """
@@ -16,8 +35,7 @@ def add_remote_user_to_GOLD( email, provider=None ) :
     @:param email email address
     @:param provider idp provider type (feide, social) retrieved from dataporten
     """
-
-    message = ""
+    message = u""
     username = email
     user_info = []
 
@@ -26,80 +44,59 @@ def add_remote_user_to_GOLD( email, provider=None ) :
     else:
         description = ":".join(provider)
 
-    useradd_command = "sudo /opt/gold/bin/gmkuser %s -d \"%s\" " % (username, description)
-    p = subprocess.Popen(useradd_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    p.wait()
-
-    ## Do not proceed if the user exists!!
-    for line in p.stdout.readlines():
-       if re.search("User already exists",line) :
-            message = "User %s already exists in the GOLD DB!" % username
-            return message
-
-    ## Check if user has been added to GOLD DB
-    user_check_command = "sudo /opt/gold/bin/glsuser -u %s " % username
-    p = subprocess.Popen(user_check_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    p.wait()
-
-    for line in p.stdout.readlines():
-        if re.search(username,line) :
-            user_info = line.split()
+    useradd_command = ['/opt/gold/bin/gmkuser', username, '-d' description]
+    useradd = popen_communicate(useradd_command)
 
     ## If the user is sucessfully created
-    if user_info[0] == username and user_info[1] == 'True' :
-
+    if useradd['rc'] == 0:
             ## Add user to default galaxy project gx_default, create account and credit the account with default CPU hours
-            add_to_gx_default_command = "sudo /opt/gold/bin/gchproject --addUsers %s gx_default " % username
-            p = subprocess.Popen(add_to_gx_default_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            p.wait()
-
-            for line in p.stdout.readlines():
-                if re.search("Successfully",line) :
-                    message = "Remote user %s added successfully to GOLD DB and the default portal project (gx_galaxy) only.\n" % username
-                    #print "Feide user %s added successfully to GOLD DB and the default portal project (gx_galaxy) only." % username
+            add_to_gx_default_command = ['/opt/gold/bin/gchproject', '--addUsers', username, 'gx_default']
+            tmp = popen_communicate(add_to_gx_default_command)
+            if tmp['rc'] != 0:
+                log_message(tmp['stderr'])
+                raise Exception()
 
             ## Add user to account 'username_gx_default' in project gx_default
-            create_account_command = "sudo /opt/gold/bin/gmkaccount -p gx_default -u %s -n \"%s_gx_default\"" % (username,username)
-            p = subprocess.Popen(create_account_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            p.wait()
+            create_account_command = ["/opt/gold/bin/gmkaccount", '-p', 'gx_default', '-u', username, '-n', "{}_gx_default".format(username)]
+            tmp = popen_communicate(create_account_command)
+            if tmp['rc'] != 0:
+                log_message(tmp['stderr'])
+                raise Exception()
 
-            for line in p.stdout.readlines():
-                if re.search("Successfully created",line) :
-                    message = message +  "Created account in default portal project (gx_galaxy) for remote user %s. \n" % username
-                    #print "Created account in gx_default for remote user %s." % username
             ## Credit the account - 200 CPU hours
 
             ## Get the account id
-            get_account_id_command = "sudo /opt/gold/bin/glsaccount --show Id -n %s_gx_default" % username
-            p = subprocess.Popen(get_account_id_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            p.wait()
-            account_id = ''
-            account_info = []
-            for line in p.stdout.readlines():
+            get_account_id_command = ["/opt/gold/bin/glsaccount", "--show", "Id", "-n", "{}_gx_default".format(username)]
+            tmp = popen_communicate(get_account_id_command)
+            if tmp['rc'] != 0:
+                log_message(tmp['stderr'])
+                raise Exception()
+
+            for line in tmp[0].readlines():
                   account_info = line.split()
             account_id = account_info[0]
+            # TODO remove
+            log_message(account_id)
 
             ## Credit the account (in hours)
-            credit_account_command = "sudo /opt/gold/bin/gdeposit -h -a %s -z 200" % account_id
-            p = subprocess.Popen(credit_account_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            p.wait()
-
-            for line in p.stdout.readlines():
-                if re.search("Successfully deposited",line) :
-                    message = message +  "Credited account %s_gx_default for remote user %s in default portal project (gx_galaxy).\n" % (username,username)
-                    message = message + line
-                    #print "Credited account in gx_default for remote user %s." % username
-
-            return message
+            credit_account_command = ["/opt/gold/bin/gdeposit", "-h", "-a", account_id, "-z", "200"]
+            popen_communicate(credit_account_command)
 
     else :
-        print "Failed to create a user in GOLD"
+        pass
+        # log_message("Failed to create a user in GOLD")
 
 def check_if_gold_exist():
     for pid in psutil.pids():
         p = psutil.Process(pid)
         if p.name() == "goldd":
             return True
+
+def log_message(message):
+    # If different location is needed, a different SELinux Type Enforcement module may be needed.
+    with io.open("/var/log/httpd/adduser_to_gold.log", 'a') as logfile:
+        message = u"" + datetime.isoformat() + message
+        logfile.write(message)
 
 def idp_provider_type_from_request(request):
     """
@@ -123,11 +120,8 @@ if __name__ == '__main__':
     parser.add_argument("-r", dest='request')
     args = parser.parse_args()
     if check_if_gold_exist():
-        message = add_remote_user_to_GOLD(args.email, idp_provider_type_from_request(args.request))
-        print message
+        add_remote_user_to_GOLD(args.email, idp_provider_type_from_request(args.request))
     else:
-        print idp_provider_type_from_request(args.request)
-        print "User %s has not been added to GOLD! Add user manually. " % args.email
-        pass
-
+        #print idp_provider_type_from_request(args.request)
+        log_message("User %s has not been added to GOLD! Add user manually. " % args.email)
 

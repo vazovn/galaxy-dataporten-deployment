@@ -1,0 +1,11 @@
+
+module galaxy-addusertogold 1.0;
+
+require {
+	type httpd_log_t;
+	type httpd_t;
+	class file write;
+}
+
+#============= httpd_t ==============
+allow httpd_t httpd_log_t:file append;

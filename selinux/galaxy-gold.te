@@ -1,0 +1,13 @@
+
+module galaxy-gold 1.0;
+
+require {
+	type httpd_t;
+	type usr_t;
+	class file append;
+}
+
+#============= httpd_t ==============
+
+#!!!! WARNING: 'usr_t' is a base type.
+allow httpd_t usr_t:file append;

@@ -105,10 +105,17 @@ case ${fixfirewallandselinux} in
         sudo setsebool -P httpd_can_network_connect 1
         sudo setsebool -P httpd_can_network_relay 1
         sudo setsebool -P httpd_enable_homedirs 1
-        sudo chcon -R -t httpd_sys_content_t /home/galaxy/galaxy/static/
-        sudo restorecon -Rv /home/galaxy/galaxy/static/
+        # necessary?
+        # sudo chcon -R -t httpd_sys_content_t /home/galaxy/galaxy/static/
+        # sudo semanage fcontext -a -t httpd_sys_content_t /home/galaxy/galaxy/static
+        # sudo restorecon -Rv /home/galaxy/galaxy/static
         sudo setsebool -P httpd_read_user_content 1
-        sudo apachectl restart 
+        # Gold log
+        sudo semodule -i selinux/galaxy-gmkuser.pp
+        # Add_user log
+        sudo semodule -i selinux/galaxy-addusertogold.te
+        # Apache restart
+        sudo apachectl restart
     ;;
 esac
 

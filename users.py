@@ -22,7 +22,7 @@ u"""
 """
 
 import ConfigParser
-import os.path
+import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -90,7 +90,9 @@ def run_adduser_to_gold(email, request):
     :param email: Email address
     """
     if os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
-        subprocess.call([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
+        with open(os.devnull, 'w') as devnull:
+            subprocess.Popen([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request],
+                             stdin=None, stdout=devnull, stderr=devnull)
 
 
 def return_email(request):
