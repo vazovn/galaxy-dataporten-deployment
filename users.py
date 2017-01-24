@@ -47,6 +47,8 @@ else:
     config.set('db', 'table_name', 'usersprod')
     config.add_section('log')
     config.set('log', 'file', '')
+    config.add_section('crediting')
+    config.set('crediting', 'default_hours', '200')
     with open(sys.path[0] + '/config.cfg', 'wb') as configfile:
         config.write(configfile)
 
@@ -91,8 +93,7 @@ def run_adduser_to_gold(email, request):
     """
     if os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
         with open(os.devnull, 'w') as devnull:
-            subprocess.Popen([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request],
-                             stdin=None, stdout=devnull, stderr=devnull)
+            subprocess.Popen([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
 
 
 def return_email(request):

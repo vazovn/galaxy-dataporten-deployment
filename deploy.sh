@@ -101,19 +101,27 @@ case ${fixfirewallandselinux} in
         sudo firewall-cmd --permanent --add-port=443/tcp
         sudo firewall-cmd --permanent --add-port=80/tcp
         sudo firewall-cmd --reload
+
         echo "Fix selinux issues"
         sudo setsebool -P httpd_can_network_connect 1
         sudo setsebool -P httpd_can_network_relay 1
         sudo setsebool -P httpd_enable_homedirs 1
+
         # necessary?
         # sudo chcon -R -t httpd_sys_content_t /home/galaxy/galaxy/static/
         # sudo semanage fcontext -a -t httpd_sys_content_t /home/galaxy/galaxy/static
         # sudo restorecon -Rv /home/galaxy/galaxy/static
         sudo setsebool -P httpd_read_user_content 1
-        # Gold log
-        sudo semodule -i selinux/galaxy-gmkuser.pp
-        # Add_user log
-        sudo semodule -i selinux/galaxy-addusertogold.te
+
+        # gold log
+        sudo semanage fcontext -a -t httpd_sys_rw_content_t "/opt/gold/log(/.*)?"
+        sudo restorecon -R /opt/gold/log
+
+        # httpd-gold log
+        sudo mkdir /var/log/goldhttpd
+        sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/log/goldhttpd(/.*)?"
+        sudo restorecon -R /var/log/goldhttpd
+
         # Apache restart
         sudo apachectl restart
     ;;

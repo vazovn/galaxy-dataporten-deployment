@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import ConfigParser
 import json
 import subprocess
 
@@ -10,6 +11,20 @@ import psutil
 import urlparse
 import os
 import io
+import sys
+
+# Read (or create) config file
+config = ConfigParser.ConfigParser()
+if os.path.isfile(sys.path[0] + '/config.cfg'):
+    config.read(sys.path[0] + '/config.cfg')
+if config.has_option('crediting', 'default_hours'):
+    hours = config.get('crediting', 'default_hours')
+else:
+    hours = '200'
+if config.has_option('log', 'file'):
+    logfilename = config.get('log', 'file')
+else:
+    logfilename = '200'
 
 def popen_communicate(command):
     """
@@ -19,7 +34,7 @@ def popen_communicate(command):
     :return: dictionary: {stdout, stderr, rc} (returncode)
     """
     with open(os.devnull, 'w') as devnull:
-        p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         sdata = p.communicate()
     return {'stdout': sdata[0],
             'stderr': sdata[1],
@@ -47,6 +62,14 @@ def add_remote_user_to_GOLD( email, provider=None ) :
     useradd_command = ['/opt/gold/bin/gmkuser', username, '-d', description]
     useradd = popen_communicate(useradd_command)
 
+    ## If the user is already created:
+    if useradd['rc'] == 74:
+        return
+
+    ## If goldd is not running:
+    if useradd['rc'] == 22:
+        log_message("Gold is not running. {} not added.".format(email))
+
     ## If the user is sucessfully created
     if useradd['rc'] == 0:
             ## Add user to default galaxy project gx_default, create account and credit the account with default CPU hours
@@ -63,7 +86,7 @@ def add_remote_user_to_GOLD( email, provider=None ) :
                 log_message(tmp['stderr'])
                 raise Exception()
 
-            ## Credit the account - 200 CPU hours
+            ## Credit the account - CPU hours from config
 
             ## Get the account id
             get_account_id_command = ["/opt/gold/bin/glsaccount", "--show", "Id", "-n", "{}_gx_default".format(username)]
@@ -79,24 +102,20 @@ def add_remote_user_to_GOLD( email, provider=None ) :
             log_message(account_id)
 
             ## Credit the account (in hours)
-            credit_account_command = ["/opt/gold/bin/gdeposit", "-h", "-a", account_id, "-z", "200"]
+            credit_account_command = ["/opt/gold/bin/gdeposit", "-h", "-a", account_id, "-z", hours]
             popen_communicate(credit_account_command)
 
     else :
         pass
         # log_message("Failed to create a user in GOLD")
 
-def check_if_gold_exist():
-    for pid in psutil.pids():
-        p = psutil.Process(pid)
-        if p.name() == "goldd":
-            return True
 
 def log_message(message):
     # If different location is needed, a different SELinux Type Enforcement module may be needed.
-    with io.open("/var/log/httpd/adduser_to_gold.log", 'a') as logfile:
-        message = u"" + datetime.isoformat() + message
+    with io.open("/var/log/httpd/{}".format(logfilename), 'a') as logfile:
+        message = u"" + datetime.datetime.now().isoformat() + ' ' + message + '\n'
         logfile.write(message)
+
 
 def idp_provider_type_from_request(request):
     """
@@ -119,9 +138,4 @@ if __name__ == '__main__':
     parser.add_argument("-e", dest='email')
     parser.add_argument("-r", dest='request')
     args = parser.parse_args()
-    if check_if_gold_exist():
-        add_remote_user_to_GOLD(args.email, idp_provider_type_from_request(args.request))
-    else:
-        #print idp_provider_type_from_request(args.request)
-        log_message("User %s has not been added to GOLD! Add user manually. " % args.email)
-
+    add_remote_user_to_GOLD(args.email, idp_provider_type_from_request(args.request))
