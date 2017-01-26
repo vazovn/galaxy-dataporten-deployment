@@ -51,7 +51,7 @@ def add_remote_user_to_GOLD( email, provider=None ) :
     @:param provider idp provider type (feide, social) retrieved from dataporten
     """
     message = u""
-    username = email
+    username = email.lower()
     user_info = []
 
     if provider[0] == "feide":
@@ -95,24 +95,27 @@ def add_remote_user_to_GOLD( email, provider=None ) :
                 log_message(tmp['stderr'])
                 raise Exception()
 
-            for line in tmp[0].readlines():
-                  account_info = line.split()
+            #for line in tmp['stdout'].readlines():
+            account_info = tmp['stdout'].splitlines()[-1].split()
             account_id = account_info[0]
             # TODO remove
-            log_message(account_id)
 
             ## Credit the account (in hours)
             credit_account_command = ["/opt/gold/bin/gdeposit", "-h", "-a", account_id, "-z", hours]
-            popen_communicate(credit_account_command)
+            tmp = popen_communicate(credit_account_command)
+            if tmp['rc'] != 0:
+                log_message(tmp['stderr'])
+                raise Exception()
+            log_message("Added {} to gx_default and credited {} hours to account id {}".format(username, hours, account_id))
 
     else :
-        pass
-        # log_message("Failed to create a user in GOLD")
+        log_message("Other issue: {}".format(tmp['stdout']))
 
 
 def log_message(message):
     # If different location is needed, a different SELinux Type Enforcement module may be needed.
-    with io.open("/var/log/httpd/{}".format(logfilename), 'a') as logfile:
+    #with io.open("/tmp/{}".format(logfilename), 'a') as logfile:
+    with io.open("/var/log/goldhttpd/{}".format(logfilename), 'a') as logfile:
         message = u"" + datetime.datetime.now().isoformat() + ' ' + message + '\n'
         logfile.write(message)
 
@@ -138,4 +141,5 @@ if __name__ == '__main__':
     parser.add_argument("-e", dest='email')
     parser.add_argument("-r", dest='request')
     args = parser.parse_args()
+    log_message("Checking {}".format(args.email))
     add_remote_user_to_GOLD(args.email, idp_provider_type_from_request(args.request))
