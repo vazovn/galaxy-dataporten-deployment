@@ -98,7 +98,7 @@ case ${updatesslconf} in
 
         echo "Adds service name to redirect in 02.ssl.conf"
         sed "s/GALAXYSERVICENAME/${galaxyservicename}/" 02.ssl.conf > tmp.02.ssl.conf
-        sed -i "s/MAINTENANCE_PAGE/${maint_page}/" tmp.02.ssl.conf
+        sed -i "s%MAINTENANCE_PAGE%${maint_page}%" tmp.02.ssl.conf
 
         echo "Adds galaxy proxy info"
         if grep --quiet 'VirtualHost _default_:443' /etc/httpd/conf.d/ssl.conf; then
