@@ -22,6 +22,8 @@ u"""
 """
 
 import ConfigParser
+import json
+
 import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -41,6 +43,9 @@ else:
     db_name = raw_input('Database name:')
     db_user = raw_input('Database user:')
     db_pass = raw_input('Database pass:')
+    config.add_section('general')
+    config.set('general', 'maintenance_stop', 'no')
+    config.set('general', 'admins', '')
     config.add_section('db')
     config.set('db', 'uri', 'postgresql://' + db_user
                + ':' + db_pass
@@ -121,19 +126,20 @@ def return_email(request):
             return user.email + '\n'
     return "none\n"
 
+MAINTENANCE_STOP = config.getboolean('general', 'maintenance_stop')
+ADMINS = config.get('general', 'admins')
+if ADMINS and ADMINS[0] == "[":
+    ADMINS = json.load(ADMINS)
+else:
+    ADMINS = [ ADMINS ]
+LOGFILENAME = config.get('log', 'file')
 
 while True:
     request = sys.stdin.readline()
-    tmp = return_email(request)
+    email = return_email(request)
     # Change this boolean and restart httpd for maintenance stop
-    maintenance_stop = config
-    if config.has_option('maintenance_stop', 'maintenance_stop'):
-        maintenance_stop = True
-    else:
-        maintenance_stop = False
-    logfilename = config.get('log', 'file')
-    if maintenance_stop and tmp != 'tt+fb@ulrik.uio.no\n' and tmp != 'n.a.vazov@usit.uio.no\n' and tmp != 'sabry.razick@usit.uio.no':
+    if MAINTENANCE_STOP and email not in ADMINS:
         sys.stdout.write('maintenance\n')
     else:
-       	sys.stdout.write(return_email(request))
+       	sys.stdout.write(email)
     sys.stdout.flush()
