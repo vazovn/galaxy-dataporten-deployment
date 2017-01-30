@@ -35,8 +35,8 @@ checked = set()
 
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
-if os.path.isfile(sys.path[0] + '/config.cfg'):
-    config.read(sys.path[0] + '/config.cfg')
+if os.path.isfile(sys.path[0] + '/galaxy_config.cfg'):
+    config.read(sys.path[0] + '/galaxy_config.cfg')
 else:
     print "No config file found. Creating new"
     db_host = raw_input('Database host:')
@@ -56,7 +56,7 @@ else:
     config.set('log', 'file', '')
     config.add_section('crediting')
     config.set('crediting', 'default_hours', '200')
-    with open(sys.path[0] + '/config.cfg', 'wb') as configfile:
+    with open(sys.path[0] + '/galaxy_config.cfg', 'wb') as configfile:
         config.write(configfile)
 
 # If run with any argument, exit after creating config
