@@ -38,11 +38,15 @@ Should be set to:
 - Profilinfo
 - Bruker-ID
 
-### Galaxy-register 
-
 #### Administrators
 
 For portals maintained by FT, FT should be added as an administrator.
+
+### Galaxy-register 
+
+The database information from the galaxy-register service and the service name (for example lifeportal)
+
+### 
 
 ## What it does
 

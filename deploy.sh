@@ -38,6 +38,8 @@ fi
 echo "Before continuing, please read the information in README.md"
 read -p "Dataporten Client ID: " dpclientid
 read -p "Dataporten Client Secret: " dpclientsecret
+read -p "Public hostname: " public_hostname
+read -p "Galaxy service name: " galaxyservicename
 read -p "Maintenance page (for example operational log): " maint_page
 
 case ${installmod} in
@@ -79,7 +81,7 @@ case ${updatesslconf} in
         sed -i "s/DPCLIENTSECRET/${dpclientsecret}/" tmp.01.ssl.conf
         randomstring=$(python -c 'import random, string; print "".join(random.choice(string.ascii_uppercase + string.digits) for n in range(random.randint(30,50)))')
         sed -i "s/CRYPTOPASSPHRASE/${randomstring}/" tmp.01.ssl.conf
-        sed -i "s/HOSTNAME/${HOSTNAME}/" tmp.01.ssl.conf
+        sed -i "s/HOSTNAME/${public_hostname}/" tmp.01.ssl.conf
         sudo sed -i.orig-$(date "+%y-%m-%d") -E '1 r tmp.01.ssl.conf' /etc/httpd/conf.d/ssl.conf
         rm tmp.01.ssl.conf
 
