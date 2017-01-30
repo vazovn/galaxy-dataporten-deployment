@@ -11,7 +11,7 @@ Usage:
 ### Dataporten application
 
 You need to have the dataporten openid information ready. For development, you can do this yourself. On [https://dashboard.dataporten.no/](https://dashboard.dataporten.no/), you will need to register an application. 
-After registering, you will find the Client ID and Secret ID under OAuth credentials.
+After registering, you will find the Client ID and Secret ID under OAuth credentials. For production, this should be ordered as UiO.
 
 The important fields are:
 
@@ -51,6 +51,10 @@ For portals maintained by FT, FT should be added as an administrator.
 The script downloads and installs the rpm packages for mod_auth_openidc.
 
 ### Updates httpd.conf and ssl.conf
+
+## Maintenance stop
+
+To accept login for only certain users under a maintenance stop, /usr/local/bin/galaxyemailusers
 
 ## To be implemented:
 

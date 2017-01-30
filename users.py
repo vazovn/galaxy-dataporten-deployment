@@ -22,12 +22,14 @@ u"""
 """
 
 import ConfigParser
-import os.path
+import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 import subprocess
 import sys
+
+checked = set()
 
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
@@ -47,6 +49,8 @@ else:
     config.set('db', 'table_name', 'usersprod')
     config.add_section('log')
     config.set('log', 'file', '')
+    config.add_section('crediting')
+    config.set('crediting', 'default_hours', '200')
     with open(sys.path[0] + '/config.cfg', 'wb') as configfile:
         config.write(configfile)
 
@@ -90,7 +94,8 @@ def run_adduser_to_gold(email, request):
     :param email: Email address
     """
     if os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
-        subprocess.call([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
+        with open(os.devnull, 'w') as devnull:
+            subprocess.Popen([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
 
 
 def return_email(request):
@@ -103,16 +108,32 @@ def return_email(request):
     requestsplit = request.strip().split(';')
     if requestsplit[0]:
         # if we get email from idp
-        run_adduser_to_gold(requestsplit[0], request)
+        if requestsplit[0] not in checked:
+            checked.add(requestsplit[0])
+            run_adduser_to_gold(requestsplit[0], request)
         return requestsplit[0] + '\n'
     if len(requestsplit) > 1:
         user = find_user(requestsplit[1])
         if user and user.email and user.email_confirmed:
-            run_adduser_to_gold(user.email, request)
+            if user.email not in checked:
+                checked.add(user.email)
+                run_adduser_to_gold(user.email, request)
             return user.email + '\n'
     return "none\n"
 
+
 while True:
     request = sys.stdin.readline()
-    sys.stdout.write(return_email(request))
+    tmp = return_email(request)
+    # Change this boolean and restart httpd for maintenance stop
+    maintenance_stop = config
+    if config.has_option('maintenance_stop', 'maintenance_stop'):
+        maintenance_stop = True
+    else:
+        maintenance_stop = False
+    logfilename = config.get('log', 'file')
+    if maintenance_stop and tmp != 'tt+fb@ulrik.uio.no\n' and tmp != 'n.a.vazov@usit.uio.no\n' and tmp != 'sabry.razick@usit.uio.no':
+        sys.stdout.write('maintenance\n')
+    else:
+       	sys.stdout.write(return_email(request))
     sys.stdout.flush()
