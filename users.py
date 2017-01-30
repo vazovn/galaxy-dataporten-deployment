@@ -61,6 +61,7 @@ else:
 
 # If run with any argument, exit after creating config
 if len(sys.argv) > 1:
+    print "Please fill out {}".format(sys.path[0] + '/galaxy_config.cfg')
     exit(0)
 
 # Database connection
