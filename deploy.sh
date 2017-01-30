@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# exit on all errors
+error() {
+    local sourcefile=$1
+    local lineno=$2
+    echo "Error on line ${lineno} in ${sourcefile}"
+    exit 1
+}
+trap 'error "${BASH_SOURCE}" "${LINENO}"' ERR
+# To ignore error from command, append this to command:
+## 2>&1 || echo $?
+
 VER=v2.1.3
 MOD_AUTH_OPENIDC=mod_auth_openidc-2.1.3-1.el7.centos.x86_64.rpm
 CJOSE=cjose-0.4.1-1.el7.centos.x86_64.rpm
