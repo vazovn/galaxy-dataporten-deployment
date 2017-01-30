@@ -22,8 +22,6 @@ u"""
 """
 
 import ConfigParser
-import json
-
 import os
 from sqlalchemy import create_engine, Column, Integer, String, Boolean
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -128,11 +126,7 @@ def return_email(request):
     return "none\n"
 
 MAINTENANCE_STOP = config.getboolean('general', 'maintenance_stop')
-ADMINS = config.get('general', 'admins')
-if ADMINS and ADMINS[0] == "[":
-    ADMINS = json.load(ADMINS)
-else:
-    ADMINS = [ ADMINS ]
+ADMINS = [e.strip() for e in config.get('general', 'admins').split(',')]
 LOGFILENAME = config.get('log', 'file')
 
 while True:
