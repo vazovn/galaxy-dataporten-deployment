@@ -33,8 +33,8 @@ checked = set()
 
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
-if os.path.isfile(sys.path[0] + '/galaxy_config.cfg'):
-    config.read(sys.path[0] + '/galaxy_config.cfg')
+if os.path.isfile('/etc/galaxy_email_config.cfg'):
+    config.read('/etc/galaxy_email_config.cfg')
 else:
     print "No config file found. Creating new"
     db_host = raw_input('Database host:')
@@ -54,12 +54,12 @@ else:
     config.set('log', 'file', '')
     config.add_section('crediting')
     config.set('crediting', 'default_hours', '200')
-    with open(sys.path[0] + '/galaxy_config.cfg', 'wb') as configfile:
+    with open('/etc/galaxy_email_config.cfg', 'wb') as configfile:
         config.write(configfile)
 
 # If run with any argument, exit after creating config
 if len(sys.argv) > 1:
-    print "Please fill out {}".format(sys.path[0] + '/galaxy_config.cfg')
+    print "Please fill out {}".format('/etc/galaxy_email_config.cfg')
     exit(0)
 
 # Database connection
