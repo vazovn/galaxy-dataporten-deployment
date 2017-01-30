@@ -62,7 +62,9 @@ esac
 case ${installuserspy} in
     [Yy]* )
         sudo yum install postgresql-devel python-virtualenv
-        sudo virtualenv /usr/local/.venv-galaxyemailusers
+        if [ ! -d "/usr/local/.venv-galaxyemailusers" ]; then
+            sudo virtualenv /usr/local/.venv-galaxyemailusers
+        fi
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install sqlalchemy
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install psycopg2
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install psutil
