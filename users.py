@@ -133,7 +133,7 @@ while True:
     request = sys.stdin.readline()
     email = return_email(request)
     # Change this boolean and restart httpd for maintenance stop
-    if MAINTENANCE_STOP and email not in ADMINS:
+    if MAINTENANCE_STOP and email[:-1] not in ADMINS:
         sys.stdout.write('maintenance\n')
     else:
        	sys.stdout.write(email)
