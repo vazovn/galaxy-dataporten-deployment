@@ -15,8 +15,8 @@ import sys
 
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
-if os.path.isfile('/etc/galaxy_email_config.cfg'):
-    config.read('/etc/galaxy_email_config.cfg')
+if os.path.isfile('/etc/galaxy_email.cfg'):
+    config.read('/etc/galaxy_email.cfg')
 if config.has_option('crediting', 'default_hours'):
     HOURS = config.get('crediting', 'default_hours')
 else:
