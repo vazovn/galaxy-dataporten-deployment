@@ -108,9 +108,6 @@ def add_remote_user_to_GOLD( email, provider=None ) :
                 raise Exception()
             log_message("Added {} to gx_default and credited {} hours to account id {}".format(username, HOURS, account_id))
 
-    else :
-        log_message("Other issue: {}".format(tmp['stdout']))
-
 
 def log_message(message):
     # If different location is needed, a different SELinux Type Enforcement module may be needed.
