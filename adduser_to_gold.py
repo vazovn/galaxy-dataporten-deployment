@@ -15,16 +15,16 @@ import sys
 
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
-if os.path.isfile(sys.path[0] + '/config.cfg'):
-    config.read(sys.path[0] + '/config.cfg')
+if os.path.isfile('/etc/galaxy_email.cfg'):
+    config.read('/etc/galaxy_email.cfg')
 if config.has_option('crediting', 'default_hours'):
-    hours = config.get('crediting', 'default_hours')
+    HOURS = config.get('crediting', 'default_hours')
 else:
-    hours = '200'
+    HOURS = '200'
 if config.has_option('log', 'file'):
-    logfilename = config.get('log', 'file')
+    LOGFILENAME = config.get('log', 'file')
 else:
-    logfilename = '200'
+    LOGFILENAME = '200'
 
 def popen_communicate(command):
     """
@@ -101,21 +101,18 @@ def add_remote_user_to_GOLD( email, provider=None ) :
             # TODO remove
 
             ## Credit the account (in hours)
-            credit_account_command = ["/opt/gold/bin/gdeposit", "-h", "-a", account_id, "-z", hours]
+            credit_account_command = ["/opt/gold/bin/gdeposit", "-h", "-a", account_id, "-z", HOURS]
             tmp = popen_communicate(credit_account_command)
             if tmp['rc'] != 0:
                 log_message(tmp['stderr'])
                 raise Exception()
-            log_message("Added {} to gx_default and credited {} hours to account id {}".format(username, hours, account_id))
-
-    else :
-        log_message("Other issue: {}".format(tmp['stdout']))
+            log_message("Added {} to gx_default and credited {} hours to account id {}".format(username, HOURS, account_id))
 
 
 def log_message(message):
     # If different location is needed, a different SELinux Type Enforcement module may be needed.
     #with io.open("/tmp/{}".format(logfilename), 'a') as logfile:
-    with io.open("/var/log/goldhttpd/{}".format(logfilename), 'a') as logfile:
+    with io.open("/var/log/goldhttpd/{}".format(LOGFILENAME), 'a') as logfile:
         message = u"" + datetime.datetime.now().isoformat() + ' ' + message + '\n'
         logfile.write(message)
 

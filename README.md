@@ -10,8 +10,8 @@ Usage:
 
 ### Dataporten application
 
-You need to have the dataporten openid information ready. For development, you can do this yourself. On [https://dashboard.dataporten.no/](https://dashboard.dataporten.no/), you will need to register an application. 
-After registering, you will find the Client ID and Secret ID under OAuth credentials.
+You need to have the dataporten openid information ready. For development instances, you can do this yourself. On [https://dashboard.dataporten.no/](https://dashboard.dataporten.no/), you will need to register an application. 
+After registering, you will find the Client ID and Secret ID under OAuth credentials. For production, this should be ordered as UiO.
 
 The important fields are:
 
@@ -38,11 +38,22 @@ Should be set to:
 - Profilinfo
 - Bruker-ID
 
-### Galaxy-register 
-
 #### Administrators
 
 For portals maintained by FT, FT should be added as an administrator.
+
+#### For services in production, Extended info should be filled out
+
+This is not necessary for development instances.
+
+### Galaxy-register 
+
+The database information from the galaxy-register service and the service name (for example lifeportal)
+
+### Maintenance page
+
+A page for redirecting under maintenance should be set. For Lifeportal, this is the operational log: 
+https://www.uio.no/english/services/it/research/hpc/lifeportal/log/
 
 ## What it does
 
@@ -51,6 +62,13 @@ For portals maintained by FT, FT should be added as an administrator.
 The script downloads and installs the rpm packages for mod_auth_openidc.
 
 ### Updates httpd.conf and ssl.conf
+
+## Usage 
+
+### Maintenance stop
+
+To accept login for only certain users under a maintenance stop, set maintenance_stop to yes in /etc/galaxy_email.cfg 
+and restart httpd.
 
 ## To be implemented:
 

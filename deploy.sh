@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# exit on all errors
+error() {
+    local sourcefile=$1
+    local lineno=$2
+    echo "Error on line ${lineno} in ${sourcefile}"
+    exit 1
+}
+trap 'error "${BASH_SOURCE}" "${LINENO}"' ERR
+# To ignore error from command, append this to command:
+## 2>&1 || echo $?
+
 VER=v2.1.3
 MOD_AUTH_OPENIDC=mod_auth_openidc-2.1.3-1.el7.centos.x86_64.rpm
 CJOSE=cjose-0.4.1-1.el7.centos.x86_64.rpm
@@ -38,6 +49,9 @@ fi
 echo "Before continuing, please read the information in README.md"
 read -p "Dataporten Client ID: " dpclientid
 read -p "Dataporten Client Secret: " dpclientsecret
+read -p "Public hostname: " public_hostname
+read -p "Galaxy service name: " galaxyservicename
+read -p "Maintenance page (for example operational log): " maint_page
 
 case ${installmod} in
     [Yy]* ) 
@@ -48,7 +62,9 @@ esac
 case ${installuserspy} in
     [Yy]* )
         sudo yum install postgresql-devel python-virtualenv
-        sudo virtualenv /usr/local/.venv-galaxyemailusers
+        if [ ! -d "/usr/local/.venv-galaxyemailusers" ]; then
+            sudo virtualenv /usr/local/.venv-galaxyemailusers
+        fi
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install sqlalchemy
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install psycopg2
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install psutil
@@ -78,12 +94,13 @@ case ${updatesslconf} in
         sed -i "s/DPCLIENTSECRET/${dpclientsecret}/" tmp.01.ssl.conf
         randomstring=$(python -c 'import random, string; print "".join(random.choice(string.ascii_uppercase + string.digits) for n in range(random.randint(30,50)))')
         sed -i "s/CRYPTOPASSPHRASE/${randomstring}/" tmp.01.ssl.conf
-        sed -i "s/HOSTNAME/${HOSTNAME}/" tmp.01.ssl.conf
+        sed -i "s/HOSTNAME/${public_hostname}/" tmp.01.ssl.conf
         sudo sed -i.orig-$(date "+%y-%m-%d") -E '1 r tmp.01.ssl.conf' /etc/httpd/conf.d/ssl.conf
         rm tmp.01.ssl.conf
 
         echo "Adds service name to redirect in 02.ssl.conf"
         sed "s/GALAXYSERVICENAME/${galaxyservicename}/" 02.ssl.conf > tmp.02.ssl.conf
+        sed -i "s%MAINTENANCE_PAGE%${maint_page}%" tmp.02.ssl.conf
 
         echo "Adds galaxy proxy info"
         if grep --quiet 'VirtualHost _default_:443' /etc/httpd/conf.d/ssl.conf; then

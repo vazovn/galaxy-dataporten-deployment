@@ -33,14 +33,17 @@ checked = set()
 
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
-if os.path.isfile(sys.path[0] + '/config.cfg'):
-    config.read(sys.path[0] + '/config.cfg')
+if os.path.isfile('/etc/galaxy_email.cfg'):
+    config.read('/etc/galaxy_email.cfg')
 else:
     print "No config file found. Creating new"
     db_host = raw_input('Database host:')
     db_name = raw_input('Database name:')
     db_user = raw_input('Database user:')
     db_pass = raw_input('Database pass:')
+    config.add_section('general')
+    config.set('general', 'maintenance_stop', 'no')
+    config.set('general', 'admins', '')
     config.add_section('db')
     config.set('db', 'uri', 'postgresql://' + db_user
                + ':' + db_pass
@@ -51,11 +54,12 @@ else:
     config.set('log', 'file', '')
     config.add_section('crediting')
     config.set('crediting', 'default_hours', '200')
-    with open(sys.path[0] + '/config.cfg', 'wb') as configfile:
+    with open('/etc/galaxy_email.cfg', 'wb') as configfile:
         config.write(configfile)
 
 # If run with any argument, exit after creating config
 if len(sys.argv) > 1:
+    print "Please fill out {}".format('/etc/galaxy_email.cfg')
     exit(0)
 
 # Database connection
@@ -121,14 +125,16 @@ def return_email(request):
             return user.email + '\n'
     return "none\n"
 
+MAINTENANCE_STOP = config.getboolean('general', 'maintenance_stop')
+ADMINS = [e.strip() for e in config.get('general', 'admins').split(',')]
+LOGFILENAME = config.get('log', 'file')
 
 while True:
     request = sys.stdin.readline()
-    #sys.stdout.write(return_email(request))
-    #maint:
-    tmp = return_email(request)
-    if False and tmp != 'tt+fb@ulrik.uio.no\n' and tmp != 'n.a.vazov@usit.uio.no\n' and tmp != 'sabry.razick@usit.uio.no':
+    email = return_email(request)
+    # Change this boolean and restart httpd for maintenance stop
+    if MAINTENANCE_STOP and email[:-1] not in ADMINS:
         sys.stdout.write('maintenance\n')
     else:
-       	sys.stdout.write(return_email(request))
+       	sys.stdout.write(email)
     sys.stdout.flush()
