@@ -13,6 +13,10 @@ import os
 import io
 import sys
 
+from sqlalchemy import create_engine, Column, Integer, String, Boolean
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
 if os.path.isfile('/etc/galaxy_email.cfg'):
@@ -25,6 +29,29 @@ if config.has_option('log', 'file'):
     LOGFILENAME = config.get('log', 'file')
 else:
     LOGFILENAME = '200'
+
+10
+# Database connection
+engine = create_engine(config.get('db_gold', 'uri'))
+db_session = scoped_session(sessionmaker(autocommit=False, autoflush=True, bind=engine))
+Base = declarative_base()
+Base.query = db_session.query_property()
+
+class User(Base):
+    __tablename__ = config.get('db_gold', 'table_name')
+    id = Column(Integer, primary_key=True)
+    uname = Column(String(20), index=True, unique=True)
+    status = Column(String(20))
+    projects = Column(String(200))
+    mas_email = Column(String(100))
+    ldap_email = Column(String(50))
+
+    def __init__(self, uname, ldap_email, status=None, projects=None, mas_email=None ):
+        self.uname = uname
+        self.status = ""
+        self.projects = ""
+        self.mas_email = ""
+        self.ldap_email = ldap_email
 
 def popen_communicate(command):
     """
@@ -127,9 +154,42 @@ def idp_provider_type_from_request(request):
         return "none"
     else:
         try:
+            
             idp_provider_type = json.loads(urlparse.parse_qs(requestsplit[2])['acresponse'][0])['def'][0]
+            
+            ## This block inserts the users into the gold_db which contains their MAS projects
+            if idp_provider_type[0] == "feide":
+                
+                ldap_email = requestsplit[0]
+                uname =  json.loads(urlparse.parse_qs(requestsplit[2])['acresponse'][0])['userids'][0].split(":")[1].split("@")[0]
+
+                user = User.query.filter_by(uname=uname).first()
+                
+                # if user exists, only the ldap_email may be changed 
+                #(for uio users the ldap_email will be updated from ulrik to real ldap_email at first login)
+                if user :
+                    if user.ldap_email != ldap_email :
+                        user.ldap_email = ldap_email
+                        db_session.add(user)    
+                        db_session.commit()
+                    else :
+                        pass
+                    
+                # insert a new user with the two values below
+                # status, projects and mas_email come via cron script in the night
+                else:
+                    user = User(uname, ldap_email)
+                    db_session.add(user)    
+                    db_session.commit()
+            
+            else :
+            
+                # If users are not feide but social, their mas data will be populated directly by the cron script
+                pass
+
         except:
             idp_provider_type = ("unknown",)
+            
         return idp_provider_type
 
 
