@@ -30,7 +30,6 @@ if config.has_option('log', 'file'):
 else:
     LOGFILENAME = '200'
 
-10
 # Database connection
 engine = create_engine(config.get('db_gold', 'uri'))
 db_session = scoped_session(sessionmaker(autocommit=False, autoflush=True, bind=engine))
