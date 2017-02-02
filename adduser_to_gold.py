@@ -45,12 +45,12 @@ class Mas_projects(Base):
     mas_email = Column(String(100))
     ldap_email = Column(String(50))
 
-    def __init__(self, uname, ldap_email, status=None, projects=None, mas_email=None ):
+    def __init__(self, uname, uio_email, status=None, projects=None, mas_email=None):
         self.uname = uname
         self.status = ""
         self.projects = ""
         self.mas_email = ""
-        self.ldap_email = ldap_email
+        self.ldap_email = uio_email
 
 def popen_communicate(command):
     """
