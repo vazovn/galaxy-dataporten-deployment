@@ -65,9 +65,8 @@ else:
                + ':' + gold_db_pass
                + '@' + gold_db_host
                + '/' + gold_db_name)
-    config.set('db_gold', 'table_name', 'g_mas_projects')
-    
-    
+    config.set('db_gold', 'mas_table_name', 'g_mas_projects')
+
     config.add_section('log')
     config.set('log', 'file', '')
     config.add_section('crediting')
@@ -154,5 +153,5 @@ while True:
     if MAINTENANCE_STOP and email[:-1] not in ADMINS:
         sys.stdout.write('maintenance\n')
     else:
-       	sys.stdout.write(email)
+        sys.stdout.write(email)
     sys.stdout.flush()

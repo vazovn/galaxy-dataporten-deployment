@@ -124,10 +124,8 @@ case ${fixfirewallandselinux} in
         sudo setsebool -P httpd_can_network_relay 1
         sudo setsebool -P httpd_enable_homedirs 1
 
-        # necessary?
-        # sudo chcon -R -t httpd_sys_content_t /home/galaxy/galaxy/static/
-        # sudo semanage fcontext -a -t httpd_sys_content_t /home/galaxy/galaxy/static
-        # sudo restorecon -Rv /home/galaxy/galaxy/static
+        sudo semanage fcontext -a -t httpd_sys_content_t /home/galaxy/galaxy/static
+        sudo restorecon -Rv /home/galaxy/galaxy/static
         sudo setsebool -P httpd_read_user_content 1
 
         # gold log

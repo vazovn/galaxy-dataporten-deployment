@@ -36,8 +36,8 @@ db_session = scoped_session(sessionmaker(autocommit=False, autoflush=True, bind=
 Base = declarative_base()
 Base.query = db_session.query_property()
 
-class User(Base):
-    __tablename__ = config.get('db_gold', 'table_name')
+class Mas_projects(Base):
+    __tablename__ = config.get('db_gold', 'mas_table_name')
     id = Column(Integer, primary_key=True)
     uname = Column(String(20), index=True, unique=True)
     status = Column(String(20))
@@ -67,7 +67,7 @@ def popen_communicate(command):
             'rc': p.returncode}
 
 
-def add_remote_user_to_GOLD( email, provider=None ) :
+def add_remote_user_to_gold(email, provider=None):
     """
     At registration all users are added to GOLD: User is inserted to
     GOLD user DB and to gx_default (Galaxy default) project in GOLD.
@@ -135,59 +135,86 @@ def add_remote_user_to_GOLD( email, provider=None ) :
             log_message("Added {} to gx_default and credited {} hours to account id {}".format(username, HOURS, account_id))
 
 
+def add_remote_user_to_mas(email, idp_provider_type, request):
+    """
+    Inserts the users into the gold_db which contains their MAS projects.
+    If users are not feide but social, their mas data will be populated directly by the cron script
+    # (for uio users the uio_email will be updated at first login)
+
+    :param email: email address from dataporten,
+    :param idp_provider_type: tuple with idp provider type (first element: string with feide or social)
+    :param request:
+    """
+    if idp_provider_type[0] == "feide" and idp_provider_type[2] == "uio":
+
+        uname = uname_from_request(request)
+        user = Mas_projects.query.filter_by(uname=uname).first()
+
+        if user:
+            if user.uio_email != email and user.mas_email[-12:] == "ulrik.uio.no":
+                user.uio_email = email
+                db_session.add(user)
+                db_session.commit()
+
+        # insert a new user with the two values below
+        # status, projects and mas_email come via cron script in the night
+        else:
+            user = Mas_projects(uname, email)
+            db_session.add(user)
+            db_session.commit()
+
+
 def log_message(message):
-    # If different location is needed, a different SELinux Type Enforcement module may be needed.
-    #with io.open("/tmp/{}".format(logfilename), 'a') as logfile:
-    with io.open("/var/log/goldhttpd/{}".format(LOGFILENAME), 'a') as logfile:
+    """
+    Log timestamp and message to logfile.
+
+    :param message: Message to be logged.
+    """
+    # If different location is needed, different SELinux context must be set.
+    location = "/var/log/goldhttpd"
+    with io.open("{}/{}".format(location, LOGFILENAME), 'a') as logfile:
         message = u"" + datetime.datetime.now().isoformat() + ' ' + message + '\n'
         logfile.write(message)
 
 
+def uname_from_request(request):
+    """
+    :param request: From httpd server on the form email;dpid;http-request
+    :type request: String
+    :return: uname
+    """
+    requestsplit = request.split(';', 2)
+    if len(requestsplit) != 3:
+        return "none",
+
+    try:
+        uname =  json.loads(urlparse.parse_qs(requestsplit[2])['acresponse'][0])['userids'][0].split(":")[1].split("@")[0]
+    except (ValueError, TypeError, AttributeError) as e:
+        log_message(e)
+        log_message(request)
+        uname = "unknown",
+
+    return uname
+
+
 def idp_provider_type_from_request(request):
     """
-    :param request: String on the form email;dpid;http-request
+    Extracts IDP provider and type from request
+
+    :param request: From httpd: on the form email;dpid;http-request
+    :type request: String
     :return: tuple with idp provider type (first element: string with feide or social)
     """
     requestsplit = request.split(';', 2)
     if len(requestsplit) != 3:
-        return "none"
+        return "none",
     else:
         try:
-            
             idp_provider_type = json.loads(urlparse.parse_qs(requestsplit[2])['acresponse'][0])['def'][0]
-            
-            ## This block inserts the users into the gold_db which contains their MAS projects
-            if idp_provider_type[0] == "feide":
-                
-                ldap_email = requestsplit[0]
-                uname =  json.loads(urlparse.parse_qs(requestsplit[2])['acresponse'][0])['userids'][0].split(":")[1].split("@")[0]
-
-                user = User.query.filter_by(uname=uname).first()
-                
-                # if user exists, only the ldap_email may be changed 
-                #(for uio users the ldap_email will be updated from ulrik to real ldap_email at first login)
-                if user :
-                    if user.ldap_email != ldap_email :
-                        user.ldap_email = ldap_email
-                        db_session.add(user)    
-                        db_session.commit()
-                    else :
-                        pass
-                    
-                # insert a new user with the two values below
-                # status, projects and mas_email come via cron script in the night
-                else:
-                    user = User(uname, ldap_email)
-                    db_session.add(user)    
-                    db_session.commit()
-            
-            else :
-            
-                # If users are not feide but social, their mas data will be populated directly by the cron script
-                pass
-
-        except:
-            idp_provider_type = ("unknown",)
+        except (ValueError, TypeError, AttributeError) as e:
+            log_message(e)
+            log_message(request)
+            idp_provider_type = "unknown",
             
         return idp_provider_type
 
@@ -198,4 +225,5 @@ if __name__ == '__main__':
     parser.add_argument("-r", dest='request')
     args = parser.parse_args()
     log_message("Checking {}".format(args.email))
-    add_remote_user_to_GOLD(args.email, idp_provider_type_from_request(args.request))
+    add_remote_user_to_gold(args.email, idp_provider_type_from_request(args.request))
+    add_remote_user_to_mas(args.email, idp_provider_type_from_request(args.request), args.request)
