@@ -11,8 +11,8 @@ trap 'error "${BASH_SOURCE}" "${LINENO}"' ERR
 # To ignore error from command, append this to command:
 ## 2>&1 || echo $?
 
-VER=v2.1.3
-MOD_AUTH_OPENIDC=mod_auth_openidc-2.1.3-1.el7.centos.x86_64.rpm
+VER=v2.1.5
+MOD_AUTH_OPENIDC=mod_auth_openidc-2.1.5-1.el7.centos.x86_64.rpm
 CJOSE=cjose-0.4.1-1.el7.centos.x86_64.rpm
 
 # Check rhel major release
@@ -128,14 +128,16 @@ case ${fixfirewallandselinux} in
         sudo restorecon -Rv /home/galaxy/galaxy/static
         sudo setsebool -P httpd_read_user_content 1
 
-        # gold log
-        sudo semanage fcontext -a -t httpd_sys_rw_content_t "/opt/gold/log(/.*)?"
-        sudo restorecon -R /opt/gold/log
+        if [ -d "/opt/gold/log" ]; then
+            # gold log
+            sudo semanage fcontext -a -t httpd_sys_rw_content_t "/opt/gold/log(/.*)?"
+            sudo restorecon -R /opt/gold/log
 
-        # httpd-gold log
-        sudo mkdir -p /var/log/goldhttpd
-        sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/log/goldhttpd(/.*)?"
-        sudo restorecon -R /var/log/goldhttpd
+            # httpd-gold log
+            sudo mkdir -p /var/log/goldhttpd
+            sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/log/goldhttpd(/.*)?"
+            sudo restorecon -R /var/log/goldhttpd
+        fi
 
         # Apache restart
         sudo apachectl restart
