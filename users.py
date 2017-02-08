@@ -41,15 +41,32 @@ else:
     db_name = raw_input('Database name:')
     db_user = raw_input('Database user:')
     db_pass = raw_input('Database pass:')
+    
+    # gold data
+    gold_db_host = raw_input('GOLD database host:')
+    gold_db_name = raw_input('GOLD database name:')
+    gold_db_user = raw_input('GOLD database user:')
+    gold_db_pass = raw_input('GOLD database pass:')
+    
     config.add_section('general')
     config.set('general', 'maintenance_stop', 'no')
     config.set('general', 'admins', '')
+    
     config.add_section('db')
     config.set('db', 'uri', 'postgresql://' + db_user
                + ':' + db_pass
                + '@' + db_host
                + '/' + db_name)
     config.set('db', 'table_name', 'usersprod')
+    
+    # configure gold db
+    config.add_section('db_gold')
+    config.set('db_gold', 'uri', 'postgresql://' + gold_db_user
+               + ':' + gold_db_pass
+               + '@' + gold_db_host
+               + '/' + gold_db_name)
+    config.set('db_gold', 'mas_table_name', 'g_mas_projects')
+
     config.add_section('log')
     config.set('log', 'file', '')
     config.add_section('crediting')
@@ -136,5 +153,5 @@ while True:
     if MAINTENANCE_STOP and email[:-1] not in ADMINS:
         sys.stdout.write('maintenance\n')
     else:
-       	sys.stdout.write(email)
+        sys.stdout.write(email)
     sys.stdout.flush()
