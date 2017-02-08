@@ -43,14 +43,14 @@ class Mas_projects(Base):
     status = Column(String(20))
     projects = Column(String(200))
     mas_email = Column(String(100))
-    ldap_email = Column(String(50))
+    uio_email = Column(String(50))
 
     def __init__(self, uname, uio_email, status=None, projects=None, mas_email=None):
         self.uname = uname
         self.status = ""
         self.projects = ""
         self.mas_email = ""
-        self.ldap_email = uio_email
+        self.uio_email = uio_email
 
 def popen_communicate(command):
     """
@@ -145,7 +145,7 @@ def add_remote_user_to_mas(email, idp_provider_type, request):
     :param idp_provider_type: tuple with idp provider type (first element: string with feide or social)
     :param request:
     """
-    if idp_provider_type[0] == "feide" and idp_provider_type[2] == "uio":
+    if idp_provider_type[0] == "feide" and idp_provider_type[2] == "uio.no":
 
         uname = uname_from_request(request)
         user = Mas_projects.query.filter_by(uname=uname).first()
@@ -224,6 +224,7 @@ if __name__ == '__main__':
     parser.add_argument("-e", dest='email')
     parser.add_argument("-r", dest='request')
     args = parser.parse_args()
-    log_message("Checking {}".format(args.email))
-    add_remote_user_to_gold(args.email, idp_provider_type_from_request(args.request))
-    add_remote_user_to_mas(args.email, idp_provider_type_from_request(args.request), args.request)
+    idp_provider_type = idp_provider_type_from_request(args.request)
+    log_message("Checking {}. idp_provider_type: {}".format(args.email, str(idp_provider_type)))
+    add_remote_user_to_gold(args.email, idp_provider_type)
+    add_remote_user_to_mas(args.email, idp_provider_type, args.request)

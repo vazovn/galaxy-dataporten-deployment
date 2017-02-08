@@ -133,7 +133,7 @@ case ${fixfirewallandselinux} in
         sudo restorecon -R /opt/gold/log
 
         # httpd-gold log
-        sudo mkdir /var/log/goldhttpd
+        sudo mkdir -p /var/log/goldhttpd
         sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/log/goldhttpd(/.*)?"
         sudo restorecon -R /var/log/goldhttpd
 
