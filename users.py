@@ -37,20 +37,26 @@ if os.path.isfile('/etc/galaxy_email.cfg'):
     config.read('/etc/galaxy_email.cfg')
 else:
     print "No config file found. Creating new"
+    config.add_section('general')
+    config.set('general', 'maintenance_stop', 'no')
+    config.set('general', 'admins', '')
+    
     db_host = raw_input('Database host:')
     db_name = raw_input('Database name:')
     db_user = raw_input('Database user:')
     db_pass = raw_input('Database pass:')
     
+    # run adduser to gold?
+    run_adduser = raw_input("Run adduser to gold? [yN] ")
     # gold data
-    gold_db_host = raw_input('GOLD database host:')
-    gold_db_name = raw_input('GOLD database name:')
-    gold_db_user = raw_input('GOLD database user:')
-    gold_db_pass = raw_input('GOLD database pass:')
-    
-    config.add_section('general')
-    config.set('general', 'maintenance_stop', 'no')
-    config.set('general', 'admins', '')
+    if run_adduser == "y":
+        gold_db_host = raw_input('GOLD database host:')
+        gold_db_name = raw_input('GOLD database name:')
+        gold_db_user = raw_input('GOLD database user:')
+        gold_db_pass = raw_input('GOLD database pass:')
+        config.set('general', 'run_adduser_to_gold', 1)
+    else:
+        config.set('general', 'run_adduser_to_gold', 0)
     
     config.add_section('db')
     config.set('db', 'uri', 'postgresql://' + db_user
@@ -61,14 +67,17 @@ else:
     
     # configure gold db
     config.add_section('db_gold')
-    config.set('db_gold', 'uri', 'postgresql://' + gold_db_user
-               + ':' + gold_db_pass
-               + '@' + gold_db_host
-               + '/' + gold_db_name)
+    if run_adduser:
+        config.set('db_gold', 'uri', 'postgresql://' + gold_db_user
+                   + ':' + gold_db_pass
+                   + '@' + gold_db_host
+                   + '/' + gold_db_name)
+    else:
+        config.set('db_gold', 'uri', 'none')
     config.set('db_gold', 'mas_table_name', 'g_mas_projects')
 
     config.add_section('log')
-    config.set('log', 'file', '')
+    config.set('log', 'file', 'adduser_to_gold.log')
     config.add_section('crediting')
     config.set('crediting', 'default_hours', '200')
     with open('/etc/galaxy_email.cfg', 'wb') as configfile:
@@ -114,7 +123,7 @@ def run_adduser_to_gold(email, request):
 
     :param email: Email address
     """
-    if os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
+    if config.getboolean('general', 'run_adduser_to_gold') and os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
         with open(os.devnull, 'w') as devnull:
             subprocess.Popen([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
 
