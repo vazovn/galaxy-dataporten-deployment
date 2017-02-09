@@ -56,7 +56,7 @@ else:
         gold_db_pass = raw_input('GOLD database pass:')
         config.set('general', 'run_adduser_to_gold', 1)
     else:
-        config.set('general', 'run_adduser_to_gold', 1)
+        config.set('general', 'run_adduser_to_gold', 0)
     
     config.add_section('db')
     config.set('db', 'uri', 'postgresql://' + db_user
