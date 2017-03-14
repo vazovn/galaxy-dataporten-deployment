@@ -23,13 +23,8 @@ u"""
 
 import ConfigParser
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Boolean
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 import subprocess
 import sys
-
-checked = set()
 
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
@@ -41,45 +36,14 @@ else:
     config.set('general', 'maintenance_stop', 'no')
     config.set('general', 'admins', '')
     
-    db_host = raw_input('Database host:')
-    db_name = raw_input('Database name:')
-    db_user = raw_input('Database user:')
-    db_pass = raw_input('Database pass:')
-    
-    # run adduser to gold?
-    run_adduser = raw_input("Run adduser to gold? [yN] ")
-    # gold data
-    if run_adduser == "y":
-        gold_db_host = raw_input('GOLD database host:')
-        gold_db_name = raw_input('GOLD database name:')
-        gold_db_user = raw_input('GOLD database user:')
-        gold_db_pass = raw_input('GOLD database pass:')
-        config.set('general', 'run_adduser_to_gold', 1)
-    else:
-        config.set('general', 'run_adduser_to_gold', 0)
-    
-    config.add_section('db')
-    config.set('db', 'uri', 'postgresql://' + db_user
-               + ':' + db_pass
-               + '@' + db_host
-               + '/' + db_name)
-    config.set('db', 'table_name', 'usersprod')
-    
-    # configure gold db
-    config.add_section('db_gold')
-    if run_adduser:
-        config.set('db_gold', 'uri', 'postgresql://' + gold_db_user
-                   + ':' + gold_db_pass
-                   + '@' + gold_db_host
-                   + '/' + gold_db_name)
-    else:
-        config.set('db_gold', 'uri', 'none')
-    config.set('db_gold', 'mas_table_name', 'g_mas_projects')
-
+    # is this a report server?
+    report_server = raw_input("Is this a report server? [yN] ")
+    if report_server == "y":
+		config.add_section('report_server')
+		config.set('report_server', 'authorized_report_server_users', 'REPORT_SERVER_EMAIL' )
+   
     config.add_section('log')
-    config.set('log', 'file', 'adduser_to_gold.log')
-    config.add_section('crediting')
-    config.set('crediting', 'default_hours', '200')
+    config.set('log', 'file', 'reports-lifeportal.log')
     with open('/etc/galaxy_email.cfg', 'wb') as configfile:
         config.write(configfile)
 
@@ -87,46 +51,6 @@ else:
 if len(sys.argv) > 1:
     print "Please fill out {}".format('/etc/galaxy_email.cfg')
     exit(0)
-
-# Database connection
-engine = create_engine(config.get('db', 'uri'))
-db_session = scoped_session(sessionmaker(
-    bind=engine))
-Base = declarative_base()
-Base.query = db_session.query_property()
-
-
-class User(Base):
-    __tablename__ = config.get('db', 'table_name')
-    id = Column(Integer, primary_key=True)
-    name = Column(String(200))
-    email = Column(String(200))
-    email_confirmed = Column(Boolean)
-    conf_token = Column(String(200))
-    openid = Column(String(200), index=True, unique=True)
-
-
-def find_user(dpid):
-    """
-    Queries the database for a dataporten user
-
-    :param dpid: string containing dataporten id.
-    :return: user object (table row from database)
-    """
-    user = db_session.query(User).filter_by(openid=dpid).first()
-    return user
-
-
-def run_adduser_to_gold(email, request):
-    """
-    Calls the script adduser_to_gold.py as a subprocess, if this file exist, and the email field is not empty.
-
-    :param email: Email address
-    """
-    if config.getboolean('general', 'run_adduser_to_gold') and os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
-        with open(os.devnull, 'w') as devnull:
-            subprocess.Popen([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
-
 
 def return_email(request):
     """
@@ -138,17 +62,7 @@ def return_email(request):
     requestsplit = request.strip().split(';')
     if requestsplit[0]:
         # if we get email from idp
-        if requestsplit[0] not in checked:
-            checked.add(requestsplit[0])
-            run_adduser_to_gold(requestsplit[0], request)
         return requestsplit[0] + '\n'
-    if len(requestsplit) > 1:
-        user = find_user(requestsplit[1])
-        if user and user.email and user.email_confirmed:
-            if user.email not in checked:
-                checked.add(user.email)
-                run_adduser_to_gold(user.email, request)
-            return user.email + '\n'
     return "none\n"
 
 MAINTENANCE_STOP = config.getboolean('general', 'maintenance_stop')
@@ -158,9 +72,20 @@ LOGFILENAME = config.get('log', 'file')
 while True:
     request = sys.stdin.readline()
     email = return_email(request)
+    
+    # Section for report server only
+    if config.has_section('report_server'):
+		REPORT_SERVER_AUTHORIZED = [e.strip() for e in config.get('report_server', 'authorized_report_server_users').split(',')]
+		if email[:-1] not in REPORT_SERVER_AUTHORIZED:
+			sys.stdout.write('reports_unauthorized\n')
+		else:
+			sys.stdout.write(email)
+		sys.stdout.flush()
+			
     # Change this boolean and restart httpd for maintenance stop
-    if MAINTENANCE_STOP and email[:-1] not in ADMINS:
-        sys.stdout.write('maintenance\n')
-    else:
-        sys.stdout.write(email)
-    sys.stdout.flush()
+    else :
+		if MAINTENANCE_STOP and email[:-1] not in ADMINS:
+			sys.stdout.write('maintenance\n')
+		else:
+			sys.stdout.write(email)
+		sys.stdout.flush()

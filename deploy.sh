@@ -23,11 +23,11 @@ fi
 function install_mod_auth_openidc {
     wget ${mod_auth_openidc}
     wget ${cjose_url}
-    sudo yum localinstall ${CJOSE}
-    sudo yum localinstall ${MOD_AUTH_OPENIDC}
+    sudo yum localinstall $(basename ${cjose_url})
+    sudo yum localinstall $(basename ${mod_auth_openidc_url})
     sudo yum install mod_ssl
-    rm -f ${MOD_AUTH_OPENIDC}
-    rm -f ${CJOSE}
+    rm -f $(basename ${mod_auth_openidc_url})
+    rm -f $(basename ${cjose_url})
 
 }
 
@@ -51,6 +51,12 @@ read -p "Dataporten Client Secret: " dpclientsecret
 read -p "Public hostname: " public_hostname
 read -p "Galaxy service name: " galaxyservicename
 read -p "Maintenance page (for example operational log): " maint_page
+read -p "Is this a report server?: [yN] " report_server
+
+if [ "${report_server}" == "y" ]; then
+	# http://www.uio.no/english/services/it/research/hpc/lifeportal-reports/unauthorized_access.html
+	read -p "Set the URL for unauthorized access to a report server (applicable to report servers only): " reports_server_unauthorized
+fi
 
 case ${installmod} in
     [Yy]* ) 
@@ -64,13 +70,20 @@ case ${installuserspy} in
         if [ ! -d "/usr/local/.venv-galaxyemailusers" ]; then
             sudo virtualenv /usr/local/.venv-galaxyemailusers
         fi
-        sudo /usr/local/.venv-galaxyemailusers/bin/pip install sqlalchemy
-        sudo /usr/local/.venv-galaxyemailusers/bin/pip install psycopg2
-        sudo /usr/local/.venv-galaxyemailusers/bin/pip install psutil
+        #sudo /usr/local/.venv-galaxyemailusers/bin/pip install --upgrade pip
         echo "copies users-script to /usr/local/galaxyemailusers.py"
+        
+        if [ "${report_server}" == "y" ]; then
+			read -p "Please provide one email address (Feide) of a person authorized to view the report server data : " report_server_email_auth
+			if [ ! -z "$report_server_email_auth" ]; then 
+				sed -i "s/REPORT_SERVER_EMAIL_AUTH/${report_server_email_auth}/" users.py
+			else
+				echo "You must add at least one email address of a person authorised to see the reports-server!"
+				echo "This info can be added later in the file /etc/galaxy_email.cfg. Multiple comma-separated emails are authorised."
+				echo "Restart apache for the changes to become effective"
+        fi
+        
         sudo cp users.py /usr/local/bin/galaxyemailusers.py
-        echo "copies gold-script to /usr/local/adduser_to_gold.py"
-        sudo cp adduser_to_gold.py /usr/local/bin/
         sudo /usr/local/.venv-galaxyemailusers/bin/python /usr/local/bin/galaxyemailusers.py --first
     ;;
 esac
@@ -100,6 +113,10 @@ case ${updatesslconf} in
         echo "Adds service name to redirect in 02.ssl.conf"
         sed "s/GALAXYSERVICENAME/${galaxyservicename}/" 02.ssl.conf > tmp.02.ssl.conf
         sed -i "s%MAINTENANCE_PAGE%${maint_page}%" tmp.02.ssl.conf
+        
+        if [ "${report_server}" == "y" ]; then
+			sed -i "s%REPORTS_UNAUTHORIZED%${reports_server_unauthorized}%" tmp.02.ssl.conf
+		fi
 
         echo "Adds galaxy proxy info"
         if grep --quiet 'VirtualHost _default_:443' /etc/httpd/conf.d/ssl.conf; then
@@ -126,17 +143,6 @@ case ${fixfirewallandselinux} in
         sudo semanage fcontext -a -t httpd_sys_content_t /home/galaxy/galaxy/static
         sudo restorecon -Rv /home/galaxy/galaxy/static
         sudo setsebool -P httpd_read_user_content 1
-
-        if [ -d "/opt/gold/log" ]; then
-            # gold log
-            sudo semanage fcontext -a -t httpd_sys_rw_content_t "/opt/gold/log(/.*)?"
-            sudo restorecon -R /opt/gold/log
-
-            # httpd-gold log
-            sudo mkdir -p /var/log/goldhttpd
-            sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/log/goldhttpd(/.*)?"
-            sudo restorecon -R /var/log/goldhttpd
-        fi
 
         # Apache restart
         sudo apachectl restart
