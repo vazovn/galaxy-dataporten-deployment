@@ -81,6 +81,7 @@ case ${installuserspy} in
 				echo "You must add at least one email address of a person authorised to see the reports-server!"
 				echo "This info can be added later in the file /etc/galaxy_email.cfg. Multiple comma-separated emails are authorised."
 				echo "Restart apache for the changes to become effective"
+			fi
         fi
         
         sudo cp users.py /usr/local/bin/galaxyemailusers.py
