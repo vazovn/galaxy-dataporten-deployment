@@ -130,12 +130,12 @@ case ${fixfirewallandselinux} in
         if [ -d "/opt/gold/log" ]; then
             # gold log
             sudo semanage fcontext -a -t httpd_sys_rw_content_t "/opt/gold/log(/.*)?"
-            sudo restorecon -R /opt/gold/log
+            sudo restorecon -R -F /opt/gold/log
 
             # httpd-gold log
             sudo mkdir -p /var/log/goldhttpd
             sudo semanage fcontext -a -t httpd_sys_rw_content_t "/var/log/goldhttpd(/.*)?"
-            sudo restorecon -R /var/log/goldhttpd
+            sudo restorecon -R -F /var/log/goldhttpd
         fi
 
         # Apache restart
