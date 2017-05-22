@@ -29,8 +29,6 @@ from sqlalchemy.ext.declarative import declarative_base
 import subprocess
 import sys
 
-checked = set()
-
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
 if os.path.isfile('/etc/galaxy_email.cfg'):
@@ -127,14 +125,10 @@ def return_email(request):
     requestsplit = request.strip().split(';')
     if requestsplit[0]:
         # if we get email from idp
-        if requestsplit[0] not in checked:
-            checked.add(requestsplit[0])
         return requestsplit[0] + '\n'
     if len(requestsplit) > 1:
         user = find_user(requestsplit[1])
         if user and user.email and user.email_confirmed:
-            if user.email not in checked:
-                checked.add(user.email)
             return user.email + '\n'
     return "none\n"
 
