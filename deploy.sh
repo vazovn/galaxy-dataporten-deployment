@@ -69,8 +69,6 @@ case ${installuserspy} in
         sudo /usr/local/.venv-galaxyemailusers/bin/pip install psutil
         echo "copies users-script to /usr/local/galaxyemailusers.py"
         sudo cp users.py /usr/local/bin/galaxyemailusers.py
-        echo "copies gold-script to /usr/local/adduser_to_gold.py"
-        sudo cp adduser_to_gold.py /usr/local/bin/
         sudo /usr/local/.venv-galaxyemailusers/bin/python /usr/local/bin/galaxyemailusers.py --first
     ;;
 esac

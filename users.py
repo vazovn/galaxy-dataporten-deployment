@@ -29,8 +29,6 @@ from sqlalchemy.ext.declarative import declarative_base
 import subprocess
 import sys
 
-checked = set()
-
 # Read (or create) config file
 config = ConfigParser.ConfigParser()
 if os.path.isfile('/etc/galaxy_email.cfg'):
@@ -117,17 +115,6 @@ def find_user(dpid):
     return user
 
 
-def run_adduser_to_gold(email, request):
-    """
-    Calls the script adduser_to_gold.py as a subprocess, if this file exist, and the email field is not empty.
-
-    :param email: Email address
-    """
-    if config.getboolean('general', 'run_adduser_to_gold') and os.path.isfile(sys.path[0] + '/adduser_to_gold.py') and email:
-        with open(os.devnull, 'w') as devnull:
-            subprocess.Popen([sys.executable, sys.path[0] + "/adduser_to_gold.py", "-e", email, "-r", request])
-
-
 def return_email(request):
     """
     Splits string, and retrieves email address, either from string or from database.
@@ -138,16 +125,10 @@ def return_email(request):
     requestsplit = request.strip().split(';')
     if requestsplit[0]:
         # if we get email from idp
-        if requestsplit[0] not in checked:
-            checked.add(requestsplit[0])
-            run_adduser_to_gold(requestsplit[0], request)
         return requestsplit[0] + '\n'
     if len(requestsplit) > 1:
         user = find_user(requestsplit[1])
         if user and user.email and user.email_confirmed:
-            if user.email not in checked:
-                checked.add(user.email)
-                run_adduser_to_gold(user.email, request)
             return user.email + '\n'
     return "none\n"
 
